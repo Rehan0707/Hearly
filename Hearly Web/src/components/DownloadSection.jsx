@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 export default function DownloadSection() {
   return (
     <section
+      id="install"
       style={{
         padding: '0 10px',
         boxSizing: 'border-box',

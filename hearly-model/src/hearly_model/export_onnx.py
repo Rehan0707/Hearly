@@ -38,7 +38,7 @@ def main() -> None:
             "log_mel": {0: "batch", 2: "frames"},
             "embedding": {0: "batch"},
         },
-        opset_version=17,
+        opset_version=18,
     )
 
     metadata = {

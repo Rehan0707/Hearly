@@ -1,0 +1,13 @@
+{
+  "model": "hearly-speaker-encoder",
+  "embedding_dim": 192,
+  "sample_rate": 16000,
+  "n_mels": 64,
+  "input": "normalized log-mel spectrogram [batch, 64, frames]",
+  "output": "l2-normalized speaker embedding [batch, 192]",
+  "speaker_to_index": {
+    "speaker_alice": 0,
+    "speaker_bob": 1,
+    "user_rehan": 2
+  }
+}

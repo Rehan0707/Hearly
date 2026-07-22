@@ -10,7 +10,26 @@ TARGET_SAMPLE_RATE = 16_000
 
 
 def load_mono_audio(path: str | Path, sample_rate: int = TARGET_SAMPLE_RATE) -> torch.Tensor:
-    waveform, original_rate = torchaudio.load(str(path))
+    try:
+        waveform, original_rate = torchaudio.load(str(path))
+    except Exception:
+        import wave
+        import numpy as np
+        with wave.open(str(path), "rb") as wf:
+            n_channels = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            original_rate = wf.getframerate()
+            frames = wf.readframes(wf.getnframes())
+            if sampwidth == 2:
+                audio = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            elif sampwidth == 4:
+                audio = np.frombuffer(frames, dtype=np.int32).astype(np.float32) / 2147483648.0
+            else:
+                audio = np.frombuffer(frames, dtype=np.int8).astype(np.float32) / 128.0
+            if n_channels > 1:
+                audio = audio.reshape(-1, n_channels).mean(axis=1)
+            waveform = torch.from_numpy(audio).unsqueeze(0)
+
     if waveform.ndim != 2:
         raise ValueError(f"Expected waveform [channels, samples], got {tuple(waveform.shape)}")
 

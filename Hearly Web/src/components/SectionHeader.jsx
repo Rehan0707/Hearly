@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
-const SectionHeader = ({ tag, tagIcon: TagIcon, title, titleHighlight, description, onLearnMore }) => (
+const SectionHeader = ({ tag, tagIcon: TagIcon, title, titleHighlight, description, onLearnMore = null }) => (
   <motion.div
     initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}

@@ -682,6 +682,36 @@ export function initPlatform(
       childList: true,
       characterData: true,
     });
+    const handleUrlChange = () => {
+      const currentState = detectMeeting();
+      if (currentState !== lastMeetingState) {
+        if (currentState) {
+          sendMeetingDetected();
+          console.log(`[Hearly] ${platform} meeting started via navigation`);
+        } else {
+          sendMeetingEnded();
+          console.log(`[Hearly] ${platform} meeting ended via navigation`);
+        }
+        lastMeetingState = currentState;
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+
+    // Patch history pushState/replaceState for SPAs (Zoom / Teams)
+    const origPushState = history.pushState;
+    const origReplaceState = history.replaceState;
+    history.pushState = function (...args) {
+      const res = origPushState.apply(this, args);
+      handleUrlChange();
+      return res;
+    };
+    history.replaceState = function (...args) {
+      const res = origReplaceState.apply(this, args);
+      handleUrlChange();
+      return res;
+    };
   };
 
   window.addEventListener('beforeunload', () => {

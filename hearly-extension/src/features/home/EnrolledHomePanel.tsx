@@ -42,6 +42,10 @@ export function EnrolledHomePanel({
         Voice Enrolled for{' '}
         <span className="font-semibold text-hearly-accent">{userName}</span>
       </p>
+      <div className="mt-2 flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[10px] font-medium text-hearly-secondary">
+        <span className={`h-1.5 w-1.5 rounded-full ${isCloudConfigured() ? 'bg-hearly-accent animate-pulse' : 'bg-yellow-400'}`} />
+        <span>{isCloudConfigured() ? 'VibeVoice Server Connected' : 'Local ONNX Mode'}</span>
+      </div>
 
       {capturing && (
         <div className="mt-4 w-full max-w-[300px] rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
