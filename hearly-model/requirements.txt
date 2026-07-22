@@ -1,0 +1,10 @@
+numpy>=1.26
+soundfile>=0.12
+torch>=2.2
+torchaudio>=2.2
+onnx>=1.15
+transformers>=4.40
+fastapi>=0.100
+uvicorn>=0.20
+python-multipart>=0.0.6
+accelerate>=0.26.0

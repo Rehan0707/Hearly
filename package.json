@@ -1,0 +1,14 @@
+{
+  "name": "hearly-v1-again",
+  "private": true,
+  "workspaces": ["hearly-extension"],
+  "scripts": {
+    "dev": "npm run dev --workspace hearly-extension",
+    "build": "npm run build --workspace hearly-extension",
+    "preview": "npm run preview --workspace hearly-extension",
+    "model:train": "PYTHONPATH=hearly-model/src python3 -m hearly_model.train",
+    "model:evaluate": "PYTHONPATH=hearly-model/src python3 -m hearly_model.evaluate",
+    "model:export": "PYTHONPATH=hearly-model/src python3 -m hearly_model.export_onnx",
+    "model:server": "PYTHONPATH=hearly-model/src ./hearly-model/.venv/bin/python -m hearly_model.app"
+  }
+}

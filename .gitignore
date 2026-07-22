@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+ENV/
+
+# Build outputs & dist
+dist/
+dist-ssr/
+build/
+.next/
+out/
+hearly-extension/dist/
+Hearly Web/dist/
+
+# Large Model Binaries (>100MB)
+*.onnx.data
+*.bin
+*.pt
+*.safetensors
+*.pth
+*.h5
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary / Zip files
+*.zip
+*.tar.gz
