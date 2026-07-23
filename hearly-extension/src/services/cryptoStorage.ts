@@ -1,5 +1,4 @@
-// cryptoStorage.ts
-// Secure AES-GCM local storage encryption using Web Crypto API.
+import { logger } from '@/utils/logger';
 
 const KEY_ALIAS = 'hearly_storage_key_jwk';
 let memoryKey: CryptoKey | null = null;
@@ -61,14 +60,15 @@ async function getOrCreateKey(): Promise<CryptoKey> {
 
                 txWrite.oncomplete = () => {
                   chrome.storage.local.remove(KEY_ALIAS, () => {
-                    console.log('[Hearly Crypto] Key successfully migrated to IndexedDB and removed from local storage.');
+                    logger.log('[Hearly Crypto] Key successfully migrated to IndexedDB and removed from local storage.');
+                    memoryKey = key;
                     resolve(key);
                     db.close();
                   });
                 };
                 return;
               } catch (e) {
-                console.error('[Hearly Crypto] Old key import/migration failed', e);
+                logger.error('[Hearly Crypto] Old key import/migration failed', e);
               }
             }
 
@@ -144,7 +144,7 @@ function base64ToBuffer(base64: string): ArrayBuffer {
 }
 
 export class EncryptedLocalStorage {
-  public static async encryptAndSet(key: string, data: any): Promise<void> {
+  public static async encryptAndSet(key: string, data: unknown): Promise<void> {
     try {
       const cryptoKey = await getOrCreateKey();
       const textEncoder = new TextEncoder();
@@ -162,7 +162,7 @@ export class EncryptedLocalStorage {
         chrome.storage.local.set({ [key]: payload }, resolve);
       });
     } catch (err) {
-      console.error('[Hearly Crypto] Encryption failed for key:', key, err);
+      logger.error('[Hearly Crypto] Encryption failed for key:', key, err);
       // Fallback: save unencrypted on critical failure to avoid breaking app functionality
       return new Promise((resolve) => {
         chrome.storage.local.set({ [key]: JSON.stringify(data) }, resolve);
@@ -210,7 +210,7 @@ export class EncryptedLocalStorage {
           const textDecoder = new TextDecoder();
           resolve(JSON.parse(textDecoder.decode(decrypted)) as T);
         } catch (e) {
-          console.error('[Hearly Crypto] Decryption failed for key:', key, e);
+          logger.error('[Hearly Crypto] Decryption failed for key:', key, e);
           resolve(null);
         }
       });

@@ -2,6 +2,7 @@
 // Continuous overlapping audio chunk recording with integrated AdaptiveVAD
 
 import { AdaptiveVAD } from './vad';
+import { logger } from '@/utils/logger';
 
 export class StreamingRecorder {
   private mediaRecorder1: MediaRecorder | null = null;
@@ -10,8 +11,8 @@ export class StreamingRecorder {
   private chunkDurationMs = 4000; // 4s chunks
   private overlapMs = 2000;       // 2s overlap
   
-  private intervalId: any = null;
-  private timeoutIds: any[] = [];
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+  private timeoutIds: ReturnType<typeof setTimeout>[] = [];
   
   private onAudioChunkReady: (chunkBase64: string, timestamp: number, speaker: 'you' | 'others') => void;
   private speaker: 'you' | 'others';
@@ -127,7 +128,7 @@ export class StreamingRecorder {
       this.analyser.connect(this.scriptProcessor);
       this.scriptProcessor.connect(this.audioContext.destination);
     } catch (err) {
-      console.warn('[Hearly VAD] VAD setup failed, falling back to full capture:', err);
+      logger.warn('[Hearly VAD] VAD setup failed, falling back to full capture:', err);
       this.hasSpeechInCurrentWindow = true;
     }
   }

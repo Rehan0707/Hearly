@@ -1,4 +1,5 @@
-import { initPlatform, injectHearlyBanner } from './shared';
+import { initPlatform, injectHearlyBanner, watchUrlChanges } from './shared';
+import { logger } from '../../utils/logger';
 
 const PLATFORM = 'teams';
 
@@ -24,16 +25,11 @@ function getObserveTarget(): HTMLElement | null {
 }
 
 if (isTeamsDomain()) {
-  console.log('[Hearly] Teams domain detected — watching for meeting...');
+  logger.log('Teams domain detected — watching for meeting...');
   initPlatform(PLATFORM, detectMeeting, getObserveTarget);
 
-  // Watch URL changes for Teams SPA routing
-  let lastUrl = window.location.href;
-  setInterval(() => {
-    if (window.location.href !== lastUrl) {
-      lastUrl = window.location.href;
-      console.log('[Hearly] Teams URL changed:', lastUrl);
-      injectHearlyBanner();
-    }
-  }, 1000);
+  watchUrlChanges((newUrl) => {
+    logger.log('Teams URL changed:', newUrl);
+    injectHearlyBanner();
+  });
 }

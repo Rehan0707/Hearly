@@ -62,14 +62,6 @@ function BrandTagline({
 }
 
 function BrandWordmark({ title }: { title: string }) {
-  if (title === 'Hearly') {
-    return (
-      <h1 className="text-[24px] font-bold leading-[1.05] tracking-[-0.03em]">
-        <span className="text-white">Hear</span>
-        <span className="text-hearly-accent">ly</span>
-      </h1>
-    );
-  }
   return (
     <h1 className="text-[24px] font-bold leading-[1.05] tracking-[-0.03em] text-white">
       {title}

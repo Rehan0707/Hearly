@@ -1,4 +1,5 @@
 import * as ort from 'onnxruntime-web';
+import { logger } from '@/utils/logger';
 
 export type LocalSttResult = {
   text: string;
@@ -66,7 +67,7 @@ async function loadSession(): Promise<ort.InferenceSession | null> {
           graphOptimizationLevel: 'all',
         });
       } catch (error) {
-        console.warn('[Hearly] Local STT model unavailable:', error);
+        logger.warn('[Hearly] Local STT model unavailable:', error);
         return null;
       }
     })();
@@ -91,7 +92,7 @@ async function loadVocabulary(): Promise<string[] | null> {
         }
         return null;
       } catch (error) {
-        console.warn('[Hearly] Local STT vocabulary unavailable:', error);
+        logger.warn('[Hearly] Local STT vocabulary unavailable:', error);
         return null;
       }
     })();
@@ -182,7 +183,7 @@ export async function transcribePcmWithOnnx(
     const decoded = decodeGreedyCtc(tensor.data, frames, vocabSize, vocab);
     return { text: decoded.text, score: decoded.score, unavailable: false };
   } catch (error) {
-    console.warn('[Hearly] Local STT inference failed:', error);
+    logger.warn('[Hearly] Local STT inference failed:', error);
     return { text: '', score: 0, unavailable: true };
   }
 }

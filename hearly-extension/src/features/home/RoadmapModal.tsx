@@ -36,7 +36,7 @@ export function RoadmapModal({ open, onClose }: RoadmapModalProps) {
         <header className="relative mb-8 text-center">
           <Badge variant="accent" className="mb-3">Roadmap</Badge>
           <h2 id="roadmap-title" className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-white">
-            Future of Hear<span className="text-hearly-accent">ly</span>
+            Future of Hearly
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-hearly-secondary">
             Building the next generation of focused listening.

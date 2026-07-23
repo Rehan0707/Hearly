@@ -1,13 +1,3 @@
-export type CloudVoiceEnrollmentResult = {
-  profileId: string;
-  embedding?: number[];
-};
-
-export type CloudVoiceVerificationResult = {
-  matched: boolean;
-  score: number;
-};
-
 export type CloudTranscriptionResult = {
   text: string;
   language?: string;
@@ -32,53 +22,6 @@ async function assertOk(response: Response): Promise<void> {
   if (response.ok) return;
   const text = await response.text().catch(() => '');
   throw new Error(text || `Hearly cloud request failed with ${response.status}`);
-}
-
-export async function enrollVoiceInCloud({
-  userName,
-  phraseAudio,
-  localEmbedding,
-}: {
-  userName: string;
-  phraseAudio: readonly Blob[];
-  localEmbedding: Float32Array;
-}): Promise<CloudVoiceEnrollmentResult | null> {
-  if (!isCloudConfigured()) return null;
-
-  const form = new FormData();
-  form.set('userName', userName);
-  form.set('localEmbedding', JSON.stringify(Array.from(localEmbedding)));
-  phraseAudio.forEach((blob, index) => {
-    form.append('phrases', blob, `phrase-${index + 1}.webm`);
-  });
-
-  const response = await fetch(`${getApiBaseUrl()}/api/voice/enroll`, {
-    method: 'POST',
-    body: form,
-  });
-  await assertOk(response);
-  return response.json() as Promise<CloudVoiceEnrollmentResult>;
-}
-
-export async function verifyVoiceInCloud({
-  profileId,
-  audio,
-}: {
-  profileId: string;
-  audio: Blob;
-}): Promise<CloudVoiceVerificationResult | null> {
-  if (!isCloudConfigured()) return null;
-
-  const form = new FormData();
-  form.set('profileId', profileId);
-  form.set('audio', audio, 'sample.webm');
-
-  const response = await fetch(`${getApiBaseUrl()}/api/voice/verify`, {
-    method: 'POST',
-    body: form,
-  });
-  await assertOk(response);
-  return response.json() as Promise<CloudVoiceVerificationResult>;
 }
 
 export async function transcribeAudioInCloud({

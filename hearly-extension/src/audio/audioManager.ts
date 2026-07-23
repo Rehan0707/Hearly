@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 let audioContext: AudioContext | null = null;
 let analyserNode: AnalyserNode | null = null;
 let mediaStream: MediaStream | null = null;
@@ -21,7 +23,7 @@ export async function startAudioCapture(): Promise<void> {
   }
   mediaRecorder.start(1000)
 
-  console.log('Hearly: Audio capture started')
+  logger.log('Audio capture started')
 }
 
 export function stopAudioCapture(): void {
@@ -33,7 +35,7 @@ export function stopAudioCapture(): void {
   audioContext = null;
   analyserNode = null;
   audioChunks = [];
-  console.log('Hearly: Audio capture stopped');
+  logger.log('Audio capture stopped');
 }
 
 export function getAnalyserNode(): AnalyserNode | null {

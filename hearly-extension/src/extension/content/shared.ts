@@ -3,6 +3,8 @@ import { StreamingRecorder } from '../../audio/streamingRecorder';
 import { loadVoiceProfile } from '../../services/storageService';
 import { SPEAKER_SIMILARITY_THRESHOLD } from '../../config/constants';
 import { showHearlySubtitle } from './subtitleOverlay';
+import type { AppSettings } from '../../utils/types';
+import { logger } from '../../utils/logger';
 
 export type EnrollmentStorageResult = {
   hearly_enrollment?: {
@@ -58,7 +60,7 @@ export async function decodeAudioBase64ToPcm(
       await context.close();
     }
   } catch (error) {
-    console.warn('[Hearly] Failed to decode transcript audio chunk:', error);
+    logger.warn('[Hearly] Failed to decode transcript audio chunk:', error);
     return null;
   }
 }
@@ -87,14 +89,18 @@ export function installMicBridge(platform: string) {
     if (data?.source !== 'hearly-page') return;
 
     if (data.type === 'GET_MIC_STATE' && data.requestId) {
-      chrome.storage.local.get(['hearly_filter', 'hearly_transcript', 'hearly_app_settings'], async (result: any) => {
+      chrome.storage.local.get(['hearly_filter', 'hearly_transcript', 'hearly_app_settings'], async (result: {
+        hearly_filter?: { isActive?: boolean };
+        hearly_transcript?: { isEnabled?: boolean };
+        hearly_app_settings?: Partial<AppSettings>;
+      }) => {
         const profile = await loadVoiceProfile();
         const embeddingModel = profile?.embeddingModel ?? 'fallback';
         runtimeEmbeddingModel = embeddingModel;
-        const appSettings = result.hearly_app_settings || {};
+        const appSettings: Partial<AppSettings> = result.hearly_app_settings || {};
         const userThreshold = typeof appSettings.similarityThreshold === 'number'
           ? appSettings.similarityThreshold
-          : (embeddingModel === 'fallback' ? SPEAKER_SIMILARITY_THRESHOLD : 0.58);
+          : SPEAKER_SIMILARITY_THRESHOLD;
 
         window.postMessage({
           source: 'hearly-content',
@@ -118,11 +124,11 @@ export function installMicBridge(platform: string) {
       if (!runtimeEmbeddingModel) return;
       if (runtimeVerificationInFlight) return;
       runtimeVerificationInFlight = true;
-      chrome.storage.local.get(['hearly_app_settings'], (storeResult: any) => {
-        const appSettings = storeResult.hearly_app_settings || {};
+      chrome.storage.local.get(['hearly_app_settings'], (storeResult: { hearly_app_settings?: Partial<AppSettings> }) => {
+        const appSettings: Partial<AppSettings> = storeResult.hearly_app_settings || {};
         const userThreshold = typeof appSettings.similarityThreshold === 'number'
           ? appSettings.similarityThreshold
-          : 0.58;
+          : SPEAKER_SIMILARITY_THRESHOLD;
 
         chrome.runtime.sendMessage({
           type: 'HEARLY_VERIFY_VOICE_WINDOW',
@@ -212,8 +218,8 @@ export function installMicBridge(platform: string) {
 
 export function startTranscriptionRecorder(stream: MediaStream) {
   if (streamingRecorder) return;
-  console.log('[Hearly] Starting transcription recorder...');
-  chrome.storage.local.get('hearly_app_settings', (settingsResult: any) => {
+  logger.log('[Hearly] Starting transcription recorder...');
+  chrome.storage.local.get('hearly_app_settings', (settingsResult: { hearly_app_settings?: Partial<AppSettings> }) => {
     const language = settingsResult.hearly_app_settings?.language ?? 'en';
     streamingRecorder = new StreamingRecorder(stream, 'others', (chunkBase64, timestamp) => {
       void (async () => {
@@ -240,7 +246,7 @@ export function stopTranscriptionRecorder() {
     recorder.stop();
     streamingRecorder = null;
   }
-  console.log('[Hearly] Transcription recorder stopped');
+  logger.log('[Hearly] Transcription recorder stopped');
 }
 
 export function stopMeetingAudioCapture(platform: string): void {
@@ -260,7 +266,7 @@ export function stopMeetingAudioCapture(platform: string): void {
     stream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
-  console.log(`[Hearly] Audio capture stopped on ${platform} page`);
+  logger.log(`[Hearly] Audio capture stopped on ${platform} page`);
   chrome.runtime.sendMessage({ type: 'HEARLY_AUDIO_STOPPED', platform });
 }
 
@@ -531,7 +537,7 @@ export function injectHearlyIndicator(): void {
 
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.hearly_filter) {
-      updateState((changes.hearly_filter.newValue as any)?.isActive === true);
+      updateState((changes.hearly_filter.newValue as { isActive?: boolean } | undefined)?.isActive === true);
     }
   });
 
@@ -579,7 +585,7 @@ export function registerMessageListener(platform: string) {
 
         sourceNode = audioContext.createMediaStreamSource(stream);
         sourceNode.connect(audioContext.destination);
-        console.log(`[Hearly] Audio capture started on ${platform} page (tabCapture)`);
+        logger.log(`[Hearly] Audio capture started on ${platform} page (tabCapture)`);
         chrome.runtime.sendMessage({ type: 'HEARLY_AUDIO_STARTED', platform });
 
         chrome.storage.local.get('hearly_transcript', (result: EnrollmentStorageResult) => {
@@ -588,7 +594,7 @@ export function registerMessageListener(platform: string) {
           }
         });
       }).catch((err) => {
-        console.warn(`[Hearly] ${platform} tabCapture stream failed:`, err);
+        logger.warn(`[Hearly] ${platform} tabCapture stream failed:`, err);
         chrome.runtime.sendMessage({ type: 'HEARLY_AUDIO_ERROR', error: String(err) });
       });
     }
@@ -657,7 +663,7 @@ export function initPlatform(
 
     if (detectMeeting()) {
       sendMeetingDetected();
-      console.log(`[Hearly] ${platform} meeting active on load`);
+      logger.log(`[Hearly] ${platform} meeting active on load`);
     }
 
     let lastMeetingState = detectMeeting();
@@ -668,10 +674,10 @@ export function initPlatform(
       if (currentState !== lastMeetingState) {
         if (currentState) {
           sendMeetingDetected();
-          console.log(`[Hearly] ${platform} meeting started`);
+          logger.log(`[Hearly] ${platform} meeting started`);
         } else {
           sendMeetingEnded();
-          console.log(`[Hearly] ${platform} meeting ended`);
+          logger.log(`[Hearly] ${platform} meeting ended`);
         }
         lastMeetingState = currentState;
       }
@@ -687,10 +693,10 @@ export function initPlatform(
       if (currentState !== lastMeetingState) {
         if (currentState) {
           sendMeetingDetected();
-          console.log(`[Hearly] ${platform} meeting started via navigation`);
+          logger.log(`[Hearly] ${platform} meeting started via navigation`);
         } else {
           sendMeetingEnded();
-          console.log(`[Hearly] ${platform} meeting ended via navigation`);
+          logger.log(`[Hearly] ${platform} meeting ended via navigation`);
         }
         lastMeetingState = currentState;
       }
@@ -723,4 +729,15 @@ export function initPlatform(
 
   startObserver();
   registerMessageListener(platform);
+}
+
+export function watchUrlChanges(onChange: (newUrl: string) => void): () => void {
+  let lastUrl = window.location.href;
+  const intervalId = setInterval(() => {
+    if (window.location.href !== lastUrl) {
+      lastUrl = window.location.href;
+      onChange(lastUrl);
+    }
+  }, 1000);
+  return () => clearInterval(intervalId);
 }

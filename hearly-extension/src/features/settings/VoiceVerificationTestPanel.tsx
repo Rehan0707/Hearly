@@ -4,6 +4,7 @@ import { cosineSimilarity } from '@/ai/speakerIdentity';
 import { extractVoiceFingerprintFromBlob } from '@/audio/voiceFingerprint';
 import { loadVoiceProfile } from '@/services/storageService';
 import type { VoiceProfile } from '@/utils/types';
+import { logger } from '@/utils/logger';
 
 type VerificationResult = 'ACCEPT' | 'REJECT';
 type TestMode = 'enrolled' | 'different';
@@ -36,7 +37,7 @@ export function VoiceVerificationTestPanel() {
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     const line = `[${timestamp}] ${message}`;
-    console.info(`[Hearly Verification Test] ${message}`);
+    logger.info(`[Hearly Verification Test] ${message}`);
     setLogs((current) => [
       { id: `${Date.now()}-${Math.random()}`, message: line },
       ...current,

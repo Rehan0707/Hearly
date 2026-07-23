@@ -41,7 +41,7 @@ Whether you're in **Google Meet**, **Zoom**, or **Microsoft Teams**, Hearly patc
 ```
 Hearly/
 ├── hearly-extension/      # 🧩 Manifest V3 Chrome Extension (React + TS + AudioWorklet)
-├── Hearly Web/            # 🌐 High-performance marketing web app & landing page
+├── hearly-web/            # 🌐 High-performance marketing web app & landing page
 ├── hearly-cloud-server/   # ☁️ Node.js proxy server for Whisper & AI completions
 ├── hearly-model/          # 🧠 PyTorch speaker verification training & ONNX export suite
 ├── docs/                  # 📄 Architectural specs, launch checklists & privacy policies
@@ -113,13 +113,13 @@ npm run build
 
 ---
 
-### 2. 🌐 Web Application (`Hearly Web`)
+### 2. 🌐 Web Application (`hearly-web`)
 
 Run the marketing landing page locally:
 
 ```bash
 # Navigate to web directory
-cd "Hearly Web"
+cd hearly-web
 
 # Install dependencies
 npm install

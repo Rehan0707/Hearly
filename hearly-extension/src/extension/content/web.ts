@@ -1,5 +1,7 @@
+import { logger } from '../../utils/logger';
+
 // Content script injected into Hearly Web pages to facilitate local extension integration.
-console.log('[Hearly] Web integration content script loaded.');
+logger.log('Web integration content script loaded.');
 
 function notifyPage() {
   window.postMessage({

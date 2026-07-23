@@ -6,6 +6,9 @@
     "dev": "node server.mjs",
     "start": "node server.mjs"
   },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
   "engines": {
     "node": ">=20"
   }

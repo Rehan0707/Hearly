@@ -15,7 +15,9 @@ import type { PopupTabId } from '@/ui/navigation/popupTabId';
 import { useFilterStore } from '@/store/filterStore';
 import { useTranscriptStore } from '@/store/transcriptStore';
 import { RoadmapModal } from '@/features/home/RoadmapModal';
-import { loadEnrollmentState, loadFilterState, loadTranscriptState, loadVoiceProfile, clearEnrollmentState, saveEnrollmentState, saveFilterState, saveTranscriptState, saveVoiceProfile, loadTranscriptEntries } from '@/services/storageService';
+import { loadEnrollmentState, loadFilterState, loadTranscriptState, loadVoiceProfile, clearEnrollmentState, saveEnrollmentState, saveFilterState, saveTranscriptState, saveVoiceProfile, loadTranscriptEntries, loadSubscriptionState, type SubscriptionState } from '@/services/storageService';
+
+import type { TranscriptEntry } from '@/utils/types';
 
 type AudioStatus = {
   capturing: boolean;
@@ -77,6 +79,23 @@ function PopupApp() {
   const { setEnrolled, setPhase } = useEnrollmentStore((s) => s.actions);
   const setFilterActive = useFilterStore((s) => s.actions.setActive);
   const setTranscriptEnabled = useTranscriptStore((s) => s.actions.setEnabled);
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
+
+  useEffect(() => {
+    loadSubscriptionState().then((savedSub) => {
+      if (savedSub) setSubscription(savedSub);
+    });
+
+    if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+      const handleStorageChange = (changes: Record<string, chrome.storage.StorageChange>) => {
+        if (changes.hearly_subscription?.newValue) {
+          setSubscription(changes.hearly_subscription.newValue as SubscriptionState);
+        }
+      };
+      chrome.storage.onChanged.addListener(handleStorageChange);
+      return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+    }
+  }, []);
 
   useEffect(() => {
     // Restore enrollment
@@ -127,7 +146,7 @@ function PopupApp() {
       matched?: boolean;
       isSpeech?: boolean;
       confidence?: number;
-      entry?: any;
+      entry?: TranscriptEntry;
     }) => {
       if (message.type === 'HEARLY_AUDIO_STARTED') {
         setAudioStatus({
@@ -472,6 +491,7 @@ function PopupApp() {
                 isSpeech={audioStatus.speechActive ?? false}
                 vadConfidence={audioStatus.speechConfidence ?? 0}
                 gain={(!audioStatus.speechActive || audioStatus.voiceMatched) ? 1.0 : 0.08}
+                subscription={subscription}
                 onNotifyVersions={(v) =>
                   update({ ...settings, notifyNewVersions: v })
                 }

@@ -17,6 +17,7 @@ export interface SettingsTabProps {
   isSpeech: boolean;
   vadConfidence: number;
   gain: number;
+  subscription?: { isPro: boolean; planName: string } | null;
   onNotifyVersions: (v: boolean) => void;
   onNotifyEmails: (v: boolean) => void;
   onThresholdChange: (v: number) => void;
@@ -34,6 +35,7 @@ export function SettingsTab({
   isSpeech,
   vadConfidence,
   gain,
+  subscription,
   onNotifyVersions,
   onNotifyEmails,
   onThresholdChange,
@@ -82,7 +84,7 @@ export function SettingsTab({
           onNotifyEmails={onNotifyEmails}
         />
 
-        <AppFooter />
+        <AppFooter subscription={subscription} />
       </div>
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)}>

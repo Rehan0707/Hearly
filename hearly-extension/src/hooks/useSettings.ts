@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AppSettings } from '@/utils/types';
 import { loadAppSettings, saveAppSettings } from '@/services/storageService';
+import { SPEAKER_SIMILARITY_THRESHOLD } from '@/config/constants';
 
 const defaultSettings: AppSettings = {
   language: 'en',
@@ -8,7 +9,7 @@ const defaultSettings: AppSettings = {
   notifyEmails: false,
   hearlyActive: false,
   transcriptEnabled: false,
-  similarityThreshold: 0.58,
+  similarityThreshold: SPEAKER_SIMILARITY_THRESHOLD,
 };
 
 export function useSettings() {

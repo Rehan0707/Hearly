@@ -5,6 +5,7 @@ import {
   extractVoiceFingerprintFromSamples,
 } from '@/audio/voiceFingerprint';
 import { cosineSimilarity } from './speakerIdentity';
+import { logger } from '@/utils/logger';
 
 export type SpeakerModelStatus = 'fallback' | 'onnx-ready';
 
@@ -20,7 +21,9 @@ export interface SpeakerComparisonResult {
   modelStatus: SpeakerModelStatus;
 }
 
-const DEFAULT_THRESHOLD = 0.58;
+import { SPEAKER_SIMILARITY_THRESHOLD } from '@/config/constants';
+
+const DEFAULT_THRESHOLD = SPEAKER_SIMILARITY_THRESHOLD;
 const MODEL_PATH = 'models/hearly-speaker-v1.onnx';
 const TARGET_SAMPLE_RATE = 16_000;
 const MODEL_SECONDS = 3;
@@ -67,7 +70,7 @@ async function loadSpeakerSession(): Promise<OrtSession | null> {
           graphOptimizationLevel: 'all',
         });
       } catch (error) {
-        console.info('[Hearly] Local ONNX speaker model unavailable; using fallback.', error);
+        logger.info('Local ONNX speaker model unavailable; using fallback.', error);
         return null;
       }
     })();

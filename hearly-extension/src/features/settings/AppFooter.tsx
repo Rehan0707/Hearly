@@ -19,7 +19,7 @@ function InstagramIcon() {
   );
 }
 
-export function AppFooter() {
+export function AppFooter({ subscription }: { subscription?: { isPro: boolean; planName: string } | null }) {
   return (
     <footer className="pt-1 text-center" aria-label="App information">
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]">
@@ -32,6 +32,23 @@ export function AppFooter() {
         <p className="mt-1.5 text-[11px] font-medium text-hearly-secondary">
           Version 1
         </p>
+
+        {subscription?.isPro ? (
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-hearly-accent/30 bg-hearly-accent/15 px-3 py-1 text-xs font-bold text-hearly-accent">
+            <span className="h-2 w-2 rounded-full bg-hearly-accent animate-ping" />
+            {subscription.planName || 'Pro'} Plan Active
+          </div>
+        ) : (
+          <a
+            href="http://localhost:5173/#pricing"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-hearly-accent/40 bg-hearly-accent/10 px-3.5 py-1.5 text-xs font-bold text-hearly-accent transition-all hover:bg-hearly-accent hover:text-black"
+          >
+            Upgrade to Hearly Pro →
+          </a>
+        )}
+
         <p className="mt-2 text-[12px] font-semibold tracking-[-0.01em] text-hearly-secondary">
           Cut the Noise, <span className="text-hearly-accent">Keep the Talk.</span>
         </p>

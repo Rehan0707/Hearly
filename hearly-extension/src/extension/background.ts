@@ -1,10 +1,12 @@
 import { HearlyMessage, MeetingStatus, Platform } from './messages';
+import { SPEAKER_SIMILARITY_THRESHOLD } from '@/config/constants';
 import { compareSpeakerEmbeddings, embedPcmWindowWithOnnx } from '@/ai/localSpeakerModel';
 import { transcribePcmWithOnnx } from '@/ai/localSttModel';
 import type { TranscriptEntry } from '@/utils/types';
 import { TranscriptMerger } from '@/audio/transcriptMerger';
 import { loadTranscriptEntries, saveTranscriptEntries } from '@/services/storageService';
 import { isCloudConfigured, transcribeAudioInCloud } from '@/services/cloudService';
+import { logger } from '@/utils/logger';
 
 function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   const buffer = new ArrayBuffer(44 + samples.length * 2);
@@ -79,7 +81,7 @@ function safeSendTabMessage(tabId: number, message: Record<string, unknown>) {
 class BackgroundWatchdog {
   private static activeTollInterval = 5000;
   private static keepAliveTabId: number | null = null;
-  private static heartbeatTimer: any = null;
+  private static heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   public static registerTab(tabId: number) {
     this.keepAliveTabId = tabId;
@@ -94,7 +96,7 @@ class BackgroundWatchdog {
       
       chrome.tabs.sendMessage(this.keepAliveTabId, { type: 'HEARBEAT_PING' }, (response) => {
         if (chrome.runtime.lastError || !response || response.status !== 'pong') {
-          console.warn('[Hearly Watchdog] Heartbeat missed for tab:', this.keepAliveTabId);
+          logger.warn('[Hearly Watchdog] Heartbeat missed for tab:', this.keepAliveTabId);
           this.reconnectPipeline(this.keepAliveTabId!);
         }
       });
@@ -102,7 +104,7 @@ class BackgroundWatchdog {
   }
 
   private static reconnectPipeline(tabId: number) {
-    console.log('[Hearly Watchdog] Initiating audio pipeline reconnect...');
+    logger.log('[Hearly Watchdog] Initiating audio pipeline reconnect...');
     chrome.tabs.sendMessage(tabId, { type: 'HEARLY_STOP_AUDIO' }, () => {
       if (chrome.runtime.lastError) return;
       chrome.tabCapture.getMediaStreamId({ consumerTabId: tabId }, (streamId) => {
@@ -120,10 +122,14 @@ class BackgroundWatchdog {
 }
 
 function handleInstalled() {
-  console.log('Hearly background ready');
+  logger.log('Hearly background ready');
 }
 
-function handleMessage(message: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) {
+function handleMessage(
+  message: HearlyMessage,
+  _sender: chrome.runtime.MessageSender,
+  sendResponse: (response: HearlyMessage) => void
+) {
   if (message.source === 'hearly-web-page') {
     if (message.type === 'HEARLY_WEB_CHECK_EXTENSION') {
       sendResponse({ installed: true, version: '1.0.0' });
@@ -149,13 +155,29 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
       });
       return true;
     }
+    if (message.type === 'HEARLY_WEB_CONFIRM_PAYMENT' && message.subscription) {
+      chrome.storage.local.set({
+        hearly_subscription: message.subscription
+      }, () => {
+        sendResponse({ success: true, subscription: message.subscription });
+      });
+      return true;
+    }
+    if (message.type === 'HEARLY_WEB_GET_SUBSCRIPTION') {
+      chrome.storage.local.get(['hearly_subscription'], (result) => {
+        sendResponse({
+          subscription: (result.hearly_subscription as { isPro: boolean; planName: string; paymentId?: string; paidAt?: number }) || { isPro: false, planName: 'Basic' }
+        });
+      });
+      return true;
+    }
   }
 
   if (message.type === 'MEETING_DETECTED') {
     meetingStatus.isInMeeting = true;
     meetingStatus.platform = message.payload?.platform as Platform;
     currentSessionId = crypto.randomUUID();
-    console.log('Meeting detected:', meetingStatus.platform);
+    logger.log('Meeting detected:', meetingStatus.platform);
   }
   
   if (message.type === 'MEETING_ENDED') {
@@ -167,7 +189,7 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
   
   if (message.type === 'HEARLY_TOGGLE') {
     meetingStatus.isActive = !meetingStatus.isActive;
-    console.log('Hearly isActive:', meetingStatus.isActive);
+    logger.log('Hearly isActive:', meetingStatus.isActive);
   }
   
   if (message.type === 'GET_STATUS') {
@@ -177,15 +199,15 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
 
   if (message.type === 'ACTIVATE_HEARLY') {
     meetingStatus.isActive = true;
-    console.log('Hearly activated from meeting page');
+    logger.log('Hearly activated from meeting page');
     chrome.action.openPopup().catch(() => {
-      console.log('Hearly: popup open attempted');
+      logger.log('Hearly: popup open attempted');
     });
   }
 
   if (message.type === 'OPEN_POPUP') {
     chrome.action.openPopup().catch(() => {
-      console.log('Hearly: could not open popup automatically');
+      logger.log('Hearly: could not open popup automatically');
     });
   }
 
@@ -210,15 +232,15 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
   }
 
   if (message.type === 'POPUP_TOGGLE_AUDIO_ON') {
-    const streamId = (message as any).streamId;
-    const tabId = (message as any).tabId;
+    const streamId = message.streamId;
+    const tabId = message.tabId;
 
     if (!streamId || !tabId) {
-      console.warn('[Hearly] POPUP_TOGGLE_AUDIO_ON missing streamId or tabId');
+      logger.warn('[Hearly] POPUP_TOGGLE_AUDIO_ON missing streamId or tabId');
       return;
     }
 
-    console.log('[Hearly] Forwarding streamId to content script on tab:', tabId);
+    logger.log('[Hearly] Forwarding streamId to content script on tab:', tabId);
     BackgroundWatchdog.registerTab(tabId);
 
     chrome.tabs.sendMessage(tabId, {
@@ -226,9 +248,9 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
       streamId
     }, () => {
       if (chrome.runtime.lastError) {
-        console.warn('[Hearly] Could not reach content script:', chrome.runtime.lastError.message);
+        logger.warn('[Hearly] Could not reach content script:', chrome.runtime.lastError.message);
       } else {
-        console.log('[Hearly] streamId delivered to content script successfully');
+        logger.log('[Hearly] streamId delivered to content script successfully');
       }
     });
   }
@@ -246,9 +268,9 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
   if (message.type === 'HEARLY_TRANSCRIBE_CHUNK') {
     const samples = message.samples;
     const sampleRate = message.sampleRate ?? 16000;
-    const language = ((message as any).language ?? 'en') as 'en' | 'hi' | 'mr';
-    const speaker = ((message as any).speaker ?? 'others') as 'you' | 'others';
-    const timestamp = (message as any).timestamp ?? Date.now();
+    const language = message.language ?? 'en';
+    const speaker = message.speaker ?? 'others';
+    const timestamp = message.timestamp ?? Date.now();
     if (!Array.isArray(samples) || samples.length === 0) {
       return;
     }
@@ -271,7 +293,7 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
               transcriptionText = cloudResult.text;
             }
           } catch (error) {
-            console.error('[Hearly] Cloud transcription failed:', error);
+            logger.error('[Hearly] Cloud transcription failed:', error);
             isUnavailable = true;
           }
         } else {
@@ -338,12 +360,12 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
               candidateEmbedding,
             );
             sendResponse({
-              matched: similarity >= (message.threshold ?? 0.75),
+              matched: similarity >= (message.threshold ?? SPEAKER_SIMILARITY_THRESHOLD),
               score: similarity,
               unavailable: false,
             });
           } catch (error) {
-            console.warn('[Hearly] Fallback voice verification failed:', error);
+            logger.warn('[Hearly] Fallback voice verification failed:', error);
             sendResponse({ matched: false, score: 0, unavailable: true });
           }
           return;
@@ -358,7 +380,7 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
             const comparison = compareSpeakerEmbeddings(
               new Float32Array(profile.embedding),
               candidate.embedding,
-              message.threshold ?? 0.58,
+              message.threshold ?? SPEAKER_SIMILARITY_THRESHOLD,
             );
             if (candidate.modelStatus !== 'onnx-ready') {
               sendResponse({ matched: false, score: 0, unavailable: true });
@@ -370,7 +392,7 @@ function handleMessage(message: any, _sender: chrome.runtime.MessageSender, send
               unavailable: false,
             });
           } catch (error) {
-            console.warn('[Hearly] Runtime ONNX voice verification failed:', error);
+            logger.warn('[Hearly] Runtime ONNX voice verification failed:', error);
             sendResponse({ matched: false, score: 0, unavailable: true });
           }
           return;

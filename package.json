@@ -1,11 +1,21 @@
 {
-  "name": "hearly-v1-again",
+  "name": "hearly",
   "private": true,
-  "workspaces": ["hearly-extension"],
+  "workspaces": [
+    "hearly-extension",
+    "hearly-web",
+    "hearly-cloud-server"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace hearly-extension",
-    "build": "npm run build --workspace hearly-extension",
-    "preview": "npm run preview --workspace hearly-extension",
+    "dev:ext": "npm run dev --workspace hearly-extension",
+    "dev:web": "npm run dev --workspace hearly-web",
+    "dev:server": "npm run dev --workspace hearly-cloud-server",
+    "build": "npm run build --workspace hearly-extension && npm run build --workspace hearly-web",
+    "build:ext": "npm run build --workspace hearly-extension",
+    "build:web": "npm run build --workspace hearly-web",
+    "typecheck": "npm run typecheck --workspace hearly-extension",
+    "clean": "rm -rf hearly-extension/dist hearly-web/dist hearly-extension/tsconfig.tsbuildinfo",
     "model:train": "PYTHONPATH=hearly-model/src python3 -m hearly_model.train",
     "model:evaluate": "PYTHONPATH=hearly-model/src python3 -m hearly_model.evaluate",
     "model:export": "PYTHONPATH=hearly-model/src python3 -m hearly_model.export_onnx",

@@ -16,8 +16,9 @@ body,
   min-height: 600px;
   max-height: 600px;
   overflow: hidden;
-  background-color: #000000;
-  font-family: Inter, sans-serif;
+  background-color: #0b0f19;
+  color: #f8fafc;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 *,
@@ -27,24 +28,45 @@ body,
 }
 
 * {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
 }
 
 *::-webkit-scrollbar {
-  display: none;
+  width: 5px;
 }
 
-.scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(99, 102, 241, 0.3);
+  border-radius: 9999px;
 }
 
-
-@media (prefers-reduced-motion: reduce) {
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.apple-glow {
+  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}

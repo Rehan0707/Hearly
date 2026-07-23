@@ -9,7 +9,7 @@ const isChromeExtension = (): boolean =>
 
 export async function loadVoiceProfile(): Promise<VoiceProfile | null> {
   if (!isChromeExtension()) return null;
-  const profile = await EncryptedLocalStorage.decryptAndGet<any>(STORAGE_KEYS.voiceProfile);
+  const profile = await EncryptedLocalStorage.decryptAndGet<VoiceProfile>(STORAGE_KEYS.voiceProfile);
   if (!profile || typeof profile !== 'object') return null;
 
   return {
@@ -136,4 +136,27 @@ export async function loadTranscriptEntries(): Promise<TranscriptEntry[]> {
 export async function saveTranscriptEntries(entries: TranscriptEntry[]): Promise<void> {
   if (!isChromeExtension()) return;
   await EncryptedLocalStorage.encryptAndSet('hearly_transcript_entries', entries);
+}
+
+export type SubscriptionState = {
+  isPro: boolean;
+  planName: string;
+  paymentId?: string;
+  paidAt?: number;
+};
+
+export async function saveSubscriptionState(sub: SubscriptionState): Promise<void> {
+  if (!isChromeExtension()) return;
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ hearly_subscription: sub }, resolve);
+  });
+}
+
+export async function loadSubscriptionState(): Promise<SubscriptionState | null> {
+  if (!isChromeExtension()) return null;
+  return new Promise((resolve) => {
+    chrome.storage.local.get('hearly_subscription', (result) => {
+      resolve((result.hearly_subscription as SubscriptionState | undefined) ?? null);
+    });
+  });
 }

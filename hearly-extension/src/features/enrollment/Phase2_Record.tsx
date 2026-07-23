@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { embedEnrollmentAudio, type SpeakerModelStatus } from '@/ai/localSpeakerModel';
+import { logger } from '@/utils/logger';
 import { IconCheck, IconMic } from '@/ui/shared/icons';
 
 type SpeechRecognitionResultLike = {
@@ -324,7 +325,7 @@ export function Phase2_Record({
         mediaStreamRef.current = stream;
 
         try {
-          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
           if (AudioContextClass) {
             const audioCtx = new AudioContextClass();
             audioContextRef.current = audioCtx;
@@ -351,7 +352,7 @@ export function Phase2_Record({
             checkVolume();
           }
         } catch (e) {
-          console.warn('[Hearly] Could not initialize volume analyzer:', e);
+          logger.warn('[Hearly] Could not initialize volume analyzer:', e);
         }
 
         const recorder = new MediaRecorder(stream);

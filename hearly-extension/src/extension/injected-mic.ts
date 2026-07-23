@@ -1,5 +1,6 @@
 import { StreamingRecorder } from '../audio/streamingRecorder';
 import { SPEAKER_SIMILARITY_THRESHOLD } from '../config/constants';
+import { logger } from '../utils/logger';
 type HearlyPageRequest = {
   source: 'hearly-page';
   type: 'GET_MIC_STATE';
@@ -199,7 +200,7 @@ async function processUserMicStream(
   try {
     await context.audioWorklet.addModule(workletUrl);
   } catch (err) {
-    console.error('[Hearly] Failed to add AudioWorklet module:', err);
+    logger.error('Failed to add AudioWorklet module:', err);
     throw err;
   }
 

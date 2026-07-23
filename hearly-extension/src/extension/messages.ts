@@ -26,11 +26,20 @@ export type MessageType =
   | 'HEARLY_MODEL_UNAVAILABLE'
   | 'HEARLY_NEW_TRANSCRIPT_ENTRY'
   | 'HEARLY_TRANSCRIPT_STATE_CHANGED'
+  | 'HEARLY_WEB_CHECK_EXTENSION'
+  | 'HEARLY_WEB_GET_PROFILE'
+  | 'HEARLY_WEB_GET_MEETINGS'
+  | 'HEARLY_WEB_CONFIRM_VOICE'
+  | 'HEARLY_WEB_CONFIRM_PAYMENT'
+  | 'HEARLY_WEB_GET_SUBSCRIPTION'
+  | 'HEARLY_ASSISTANT_SUGGESTION'
 
 export interface HearlyMessage {
-  type: MessageType
+  type?: MessageType
+  source?: string
   payload?: Record<string, unknown>
   streamId?: string
+  tabId?: number
   platform?: string
   error?: string
   score?: number
@@ -44,6 +53,22 @@ export interface HearlyMessage {
   threshold?: number
   vadConfidence?: number
   unavailable?: boolean
+  language?: 'en' | 'hi' | 'mr'
+  speaker?: 'you' | 'others'
+  timestamp?: number
+  audioBase64?: string
+  installed?: boolean
+  version?: string
+  profile?: unknown
+  meetings?: unknown
+  transcripts?: unknown
+  success?: boolean
+  subscription?: {
+    isPro: boolean
+    planName: string
+    paymentId?: string
+    paidAt?: number
+  }
 }
 
 export type Platform = 'meet' | 'zoom' | 'teams' | 'unknown'

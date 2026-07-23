@@ -11,7 +11,8 @@ build/
 .next/
 out/
 hearly-extension/dist/
-Hearly Web/dist/
+hearly-web/dist/
+*.tsbuildinfo
 
 # Large Model Binaries (>100MB)
 *.onnx.data
@@ -39,6 +40,8 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+.agents/
+.claude/
 *.swp
 *.swo
 
