@@ -1,11 +1,11 @@
 {
-  "manifest": "/Users/rehansanadi/Desktop/Hearly/hearly-model/data/synth_manifest.jsonl",
+  "manifest": "/Users/rehan/Desktop/Hearly/hearly-model/data/synth_manifest.jsonl",
   "speaker_to_index": {
     "speaker_alice": 0,
     "speaker_bob": 1,
     "user_rehan": 2
   },
-  "best_val_loss": 0.6927735805511475,
+  "best_val_loss": 0.6938221454620361,
   "embedding_dim": 192,
   "sample_rate": 16000,
   "n_mels": 64

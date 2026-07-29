@@ -1,10 +1,10 @@
 import { HearlyMessage, MeetingStatus, Platform } from './messages';
-import { SPEAKER_SIMILARITY_THRESHOLD } from '@/config/constants';
+import { SPEAKER_SIMILARITY_THRESHOLD, POPUP_HEIGHT_PX, POPUP_WIDTH_PX } from '@/config/constants';
 import { compareSpeakerEmbeddings, embedPcmWindowWithOnnx } from '@/ai/localSpeakerModel';
 import { transcribePcmWithOnnx } from '@/ai/localSttModel';
 import type { TranscriptEntry } from '@/utils/types';
 import { TranscriptMerger } from '@/audio/transcriptMerger';
-import { loadTranscriptEntries, saveTranscriptEntries } from '@/services/storageService';
+import { loadTranscriptEntries, saveTranscriptEntries, loadRuntimeProfile, saveRuntimeProfile } from '@/services/storageService';
 import { isCloudConfigured, transcribeAudioInCloud } from '@/services/cloudService';
 import { logger } from '@/utils/logger';
 
@@ -65,6 +65,7 @@ let currentSessionId = crypto.randomUUID();
 const youMerger = new TranscriptMerger();
 const othersMerger = new TranscriptMerger();
 let sttUnavailableNotified = false;
+let persistentPopupWindowId: number | null = null;
 
 type RuntimeVoiceProfile = {
   embedding?: number[];
@@ -125,6 +126,30 @@ function handleInstalled() {
   logger.log('Hearly background ready');
 }
 
+function openPersistentPopup() {
+  if (persistentPopupWindowId) return;
+  try {
+    const url = chrome.runtime.getURL('index.html');
+    chrome.windows.create({ url, type: 'popup', width: POPUP_WIDTH_PX, height: POPUP_HEIGHT_PX }, (win) => {
+      if (win && typeof win.id === 'number') persistentPopupWindowId = win.id;
+    });
+  } catch (err) {
+    logger.warn('Could not open persistent popup window:', err);
+  }
+}
+
+function closePersistentPopup() {
+  if (!persistentPopupWindowId) return;
+  try {
+    chrome.windows.remove(persistentPopupWindowId, () => {
+      void chrome.runtime.lastError;
+      persistentPopupWindowId = null;
+    });
+  } catch (err) {
+    persistentPopupWindowId = null;
+  }
+}
+
 function handleMessage(
   message: HearlyMessage,
   _sender: chrome.runtime.MessageSender,
@@ -136,9 +161,10 @@ function handleMessage(
       return true;
     }
     if (message.type === 'HEARLY_WEB_GET_PROFILE') {
-      chrome.storage.local.get(['hearly_voice_runtime_profile'], (result) => {
-        sendResponse({ profile: result.hearly_voice_runtime_profile || null });
-      });
+      void (async () => {
+        const p = await loadRuntimeProfile();
+        sendResponse({ profile: p || null });
+      })();
       return true;
     }
     if (message.type === 'HEARLY_WEB_GET_MEETINGS') {
@@ -148,11 +174,10 @@ function handleMessage(
       return true;
     }
     if (message.type === 'HEARLY_WEB_CONFIRM_VOICE' && message.profile) {
-      chrome.storage.local.set({
-        hearly_voice_runtime_profile: message.profile
-      }, () => {
+      void (async () => {
+        await saveRuntimeProfile(message.profile as any);
         sendResponse({ success: true });
-      });
+      })();
       return true;
     }
     if (message.type === 'HEARLY_WEB_CONFIRM_PAYMENT' && message.subscription) {
@@ -185,6 +210,8 @@ function handleMessage(
     currentSessionId = crypto.randomUUID();
     sttUnavailableNotified = false;
     BackgroundWatchdog.unregister();
+    // Close persistent popup when meeting ends
+    closePersistentPopup();
   }
   
   if (message.type === 'HEARLY_TOGGLE') {
@@ -200,15 +227,11 @@ function handleMessage(
   if (message.type === 'ACTIVATE_HEARLY') {
     meetingStatus.isActive = true;
     logger.log('Hearly activated from meeting page');
-    chrome.action.openPopup().catch(() => {
-      logger.log('Hearly: popup open attempted');
-    });
+    openPersistentPopup();
   }
 
   if (message.type === 'OPEN_POPUP') {
-    chrome.action.openPopup().catch(() => {
-      logger.log('Hearly: could not open popup automatically');
-    });
+    openPersistentPopup();
   }
 
   if (message.type === 'REQUEST_MIC_PERMISSION') {
@@ -341,9 +364,8 @@ function handleMessage(
 
   if (message.type === 'HEARLY_VERIFY_VOICE_WINDOW' && Array.isArray(message.samples)) {
     const samples = message.samples;
-    chrome.storage.local.get(['hearly_voice_runtime_profile'], (result) => {
-      void (async () => {
-        const profile = result.hearly_voice_runtime_profile as RuntimeVoiceProfile | undefined;
+    void (async () => {
+      const profile = (await loadRuntimeProfile()) as RuntimeVoiceProfile | undefined;
         if (!profile || !profile.embedding) {
           sendResponse({ matched: false, score: 0, unavailable: true });
           return;
@@ -359,8 +381,9 @@ function handleMessage(
               new Float32Array(profile.embedding),
               candidateEmbedding,
             );
+            const fallbackThreshold = Math.max(0.92, message.threshold ?? SPEAKER_SIMILARITY_THRESHOLD);
             sendResponse({
-              matched: similarity >= (message.threshold ?? SPEAKER_SIMILARITY_THRESHOLD),
+              matched: similarity >= fallbackThreshold,
               score: similarity,
               unavailable: false,
             });
@@ -400,8 +423,7 @@ function handleMessage(
 
         sendResponse({ matched: false, score: 0, unavailable: true });
       })();
-    });
-    return true;
+      return true;
   }
 }
 

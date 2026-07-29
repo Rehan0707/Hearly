@@ -39,6 +39,7 @@ def main() -> None:
             "embedding": {0: "batch"},
         },
         opset_version=18,
+        dynamo=False,
     )
 
     metadata = {

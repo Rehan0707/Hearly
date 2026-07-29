@@ -118,6 +118,9 @@ export class StreamingRecorder {
       
       this.scriptProcessor.onaudioprocess = (event) => {
         const input = event.inputBuffer.getChannelData(0);
+        for (let i = 0; i < event.outputBuffer.numberOfChannels; i++) {
+          event.outputBuffer.getChannelData(i).fill(0);
+        }
         const { isSpeech } = this.vad.process(input);
         if (isSpeech) {
           this.hasSpeechInCurrentWindow = true;

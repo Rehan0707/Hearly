@@ -70,6 +70,7 @@ torch.onnx.export(
         "embedding": {{0: "batch_size"}},
     }},
     opset_version=18,
+    dynamo=False,
 )
 print("Dummy speaker model exported successfully!")
 

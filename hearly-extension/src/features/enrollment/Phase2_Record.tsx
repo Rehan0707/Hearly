@@ -748,21 +748,7 @@ export function Phase2_Record({
           >
             <IconMic width={27} height={27} strokeWidth={1.8} aria-hidden />
           </button>
-          {isRecording && !hasRecording && (
-            <button
-              type="button"
-              onClick={async () => {
-                if (recognitionRef.current) {
-                  stopRecognition(recognitionRef.current);
-                }
-                setPhraseReadyNext(true);
-                await completePhrase();
-              }}
-              className="mx-auto rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold text-hearly-secondary transition-[background-color,color] duration-300 hover:bg-white/[0.08] hover:text-white"
-            >
-              Skip Verification
-            </button>
-          )}
+          {/* Skip Verification removed to require enrollment completion */}
         </div>
       )}
       <p className="text-[12px] font-medium text-hearly-secondary">

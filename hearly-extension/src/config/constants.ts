@@ -6,6 +6,7 @@ export const SPEAKER_SIMILARITY_THRESHOLD = 0.58;
 
 export const STORAGE_KEYS = {
   voiceProfile: 'hearly_voice_profile',
+  runtimeProfile: 'hearly_voice_runtime_profile',
   appSettings: 'hearly_app_settings',
   transcriptIndexMeta: 'hearly_transcript_meta',
 } as const;

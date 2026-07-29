@@ -28,14 +28,32 @@ export async function saveVoiceProfile(profile: VoiceProfile): Promise<void> {
     ...profile,
     embedding: Array.from(profile.embedding),
   });
+  // Also persist a lightweight runtime profile for quick access in the UI
   await chrome.storage.local.set({
-    hearly_voice_runtime_profile: {
+    [STORAGE_KEYS.runtimeProfile]: {
       id: profile.id,
       userName: profile.userName,
       embedding: Array.from(profile.embedding),
       embeddingModel: profile.embeddingModel,
       enrolledAt: profile.enrolledAt,
     },
+  });
+}
+
+export async function loadRuntimeProfile(): Promise<Partial<VoiceProfile> | null> {
+  if (!isChromeExtension()) return null;
+  return new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEYS.runtimeProfile], (result) => {
+      const p = result[STORAGE_KEYS.runtimeProfile];
+      resolve(p ?? null);
+    });
+  });
+}
+
+export async function saveRuntimeProfile(profile: Partial<VoiceProfile>): Promise<void> {
+  if (!isChromeExtension()) return;
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [STORAGE_KEYS.runtimeProfile]: profile }, resolve);
   });
 }
 
@@ -82,8 +100,8 @@ export async function clearEnrollmentState(): Promise<void> {
         'hearly_enrollment',
         'hearly_filter',
         'hearly_transcript',
-        'hearly_voice_profile',
-        'hearly_voice_runtime_profile',
+        STORAGE_KEYS.voiceProfile,
+        STORAGE_KEYS.runtimeProfile,
         'hearly_app_settings',
         'hearly_transcript_meta',
         'hearly_transcript_entries'

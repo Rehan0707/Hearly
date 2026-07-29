@@ -25,6 +25,8 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
   private writeIndex: number = 0;
   private readonly processorSampleRate: number;
   private windowSize: number;
+  private samplesSinceLastPost: number = 0;
+  private postIntervalSamples: number;
   private lastMatchTime: number = Number.NEGATIVE_INFINITY;
   private suppressedGain: number = 0.02; // Active speech suppression for non-enrolled speakers
   private targetGain: number = 1.0;
@@ -32,8 +34,7 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
   private filterActive: boolean = false;
   private hasVoiceProfile: boolean = false;
   private similarityThreshold: number = SPEAKER_SIMILARITY_THRESHOLD;
-  private matchState: boolean = true;
-  private lastStateChangeTime: number = 0;
+  private matchState: boolean = false;
   private noiseFloor: number = 0.003;
   private isSpeechActive: boolean = false;
 
@@ -42,6 +43,7 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
     this.processorSampleRate = typeof sampleRate === 'number' && sampleRate > 0 ? sampleRate : 48000;
     this.windowSize = Math.floor(this.processorSampleRate * 1.6);
     this.ringBuffer = new Float32Array(this.windowSize);
+    this.postIntervalSamples = Math.floor(this.processorSampleRate * 0.5); // send window every 0.5s
 
     this.port.onmessage = (event: MessageEvent) => {
       const { type, payload } = event.data;
@@ -52,15 +54,16 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         this.filterActive = payload.active;
         if (!payload.active) {
           this.lastMatchTime = Number.NEGATIVE_INFINITY;
+          this.matchState = false;
         }
       } else if (type === 'SET_EXTERNAL_MATCH') {
         const isMatch = Boolean(payload.matched);
-        if (isMatch !== this.matchState && (currentTime - this.lastStateChangeTime) > 0.25) {
-          this.matchState = isMatch;
-          this.lastStateChangeTime = currentTime;
-        }
         if (isMatch) {
+          this.matchState = true;
           this.lastMatchTime = currentTime;
+        } else {
+          this.matchState = false;
+          this.lastMatchTime = Number.NEGATIVE_INFINITY;
         }
         this.port.postMessage({
           type: 'VOICE_MATCH_EVALUATION',
@@ -78,8 +81,13 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
       const sample = samples[i] || 0;
       sumSquares += sample * sample;
     }
-    const rms = Math.sqrt(sumSquares / samples.length);
-    return rms > this.noiseFloor;
+    const rms = Math.sqrt(sumSquares / Math.max(1, samples.length));
+    const speechThreshold = Math.max(0.004, this.noiseFloor * 2.2);
+    const isSpeech = rms > speechThreshold;
+    if (!isSpeech) {
+      this.noiseFloor = Math.max(0.0001, this.noiseFloor * 0.995 + rms * 0.005);
+    }
+    return isSpeech;
   }
 
   process(
@@ -92,21 +100,19 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
 
     if (!inputChannel || !outputChannel) return true;
 
-    // 1. Silero VAD gating check
+    // 1. VAD gating check
     this.isSpeechActive = this.detectVad(inputChannel);
 
-    // 2. Determine target gain (1.0 for enrolled speaker, 0.02 for unknown speaker, 0.1 during silence)
-    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 1.2;
+    // 2. Determine target gain (1.0 for enrolled speaker, 0.02 for unknown speaker/background)
+    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 1.0;
 
     if (!this.filterActive || !this.hasVoiceProfile) {
       this.targetGain = 1.0;
     } else if (isRecentlyMatched && this.matchState) {
       this.targetGain = 1.0;
-    } else if (this.isSpeechActive) {
-      // Active speech suppression for non-enrolled speakers
-      this.targetGain = this.suppressedGain;
     } else {
-      this.targetGain = 0.1; // Gentle noise floor attenuation during silence
+      // Active speech suppression for non-enrolled speakers & background voices
+      this.targetGain = this.suppressedGain;
     }
 
     // 3. Smooth gain transitions to prevent audio pops (<25ms window)
@@ -121,8 +127,50 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
       this.writeIndex = (this.writeIndex + 1) % this.windowSize;
     }
 
+    // 4. Periodically post a voice-window and activity message for verification
+    this.samplesSinceLastPost += inputChannel.length;
+    if (this.samplesSinceLastPost >= this.postIntervalSamples) {
+      this.samplesSinceLastPost = 0;
+
+      // copy most recent windowSize samples into a transferable ArrayBuffer
+      const out = new Float32Array(this.windowSize);
+      let idx = this.writeIndex;
+      for (let i = 0; i < this.windowSize; i++) {
+        out[i] = this.ringBuffer[idx] ?? 0;
+        idx = (idx + 1) % this.windowSize;
+      }
+
+      try {
+        this.port.postMessage({
+          type: 'VOICE_WINDOW',
+          samples: out.buffer,
+          sampleRate: this.processorSampleRate,
+          vadConfidence: this.isSpeechActive ? 1 : 0,
+        }, [out.buffer]);
+      } catch (err) {
+        // If transfer fails for any reason, still try to post without transfer
+        this.port.postMessage({
+          type: 'VOICE_WINDOW',
+          samples: out.buffer,
+          sampleRate: this.processorSampleRate,
+          vadConfidence: this.isSpeechActive ? 1 : 0,
+        });
+      }
+
+      // Also inform page/content of current speech activity
+      this.port.postMessage({
+        type: 'VOICE_ACTIVITY',
+        isSpeech: this.isSpeechActive,
+        rms: 0,
+        noiseFloor: this.noiseFloor,
+        currentGain: this.currentGain,
+        targetGain: this.targetGain,
+      });
+    }
+
     return true;
   }
 }
 
-registerProcessor('hearly-processor', HearyVoiceProcessor);
+// Register the processor under the name expected by the injected worklet consumer
+registerProcessor('hearly-voice-processor', HearyVoiceProcessor);

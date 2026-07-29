@@ -80,7 +80,8 @@
     "storage",
     "tabCapture",
     "activeTab",
-    "scripting"
+    "scripting",
+    "windows"
   ],
   "host_permissions": [
     "https://meet.google.com/*",
