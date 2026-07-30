@@ -571,16 +571,16 @@ export function registerMessageListener(platform: string) {
           }
         } as MediaTrackConstraints,
         video: false
-      }).then((stream) => {
+      }).then(async (stream) => {
         mediaStream = stream;
-        audioContext = new AudioContext({ sampleRate: 16000 });
+        audioContext = new AudioContext();
 
         if (audioContext.state === 'suspended') {
-          const resume = () => {
-            audioContext?.resume();
-            window.removeEventListener('click', resume);
-          };
-          window.addEventListener('click', resume);
+          try {
+            await audioContext.resume();
+          } catch (err) {
+            logger.warn('[Hearly] Could not immediately resume tab AudioContext:', err);
+          }
         }
 
         sourceNode = audioContext.createMediaStreamSource(stream);

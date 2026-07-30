@@ -37,19 +37,23 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
   private matchState: boolean = false;
   private noiseFloor: number = 0.003;
   private isSpeechActive: boolean = false;
+  private enrolledEmbedding: Float32Array | null = null;
 
   constructor() {
     super();
     this.processorSampleRate = typeof sampleRate === 'number' && sampleRate > 0 ? sampleRate : 48000;
     this.windowSize = Math.floor(this.processorSampleRate * 1.6);
     this.ringBuffer = new Float32Array(this.windowSize);
-    this.postIntervalSamples = Math.floor(this.processorSampleRate * 0.5); // send window every 0.5s
+    this.postIntervalSamples = Math.floor(this.processorSampleRate * 0.4); // evaluate every 0.4s
 
     this.port.onmessage = (event: MessageEvent) => {
       const { type, payload } = event.data;
       if (type === 'SET_EMBEDDING') {
         this.hasVoiceProfile = Boolean(payload.hasVoiceProfile);
         this.similarityThreshold = payload.threshold ?? SPEAKER_SIMILARITY_THRESHOLD;
+        if (Array.isArray(payload.embedding) && payload.embedding.length > 0) {
+          this.enrolledEmbedding = new Float32Array(payload.embedding);
+        }
       } else if (type === 'SET_FILTER_ACTIVE') {
         this.filterActive = payload.active;
         if (!payload.active) {
@@ -73,6 +77,78 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         });
       }
     };
+  }
+
+  private computeCosineSimilarity(a: Float32Array, b: Float32Array): number {
+    let dot = 0, na = 0, nb = 0;
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      const x = a[i] ?? 0;
+      const y = b[i] ?? 0;
+      dot += x * y;
+      na += x * x;
+      nb += y * y;
+    }
+    const d = Math.sqrt(na) * Math.sqrt(nb);
+    return d === 0 ? 0 : dot / d;
+  }
+
+  private extractWorkletFeatures(samples: Float32Array): Float32Array {
+    const segmentCount = 24;
+    const featuresPerSegment = 8;
+    const embedding = new Float32Array(segmentCount * featuresPerSegment);
+    const segmentLength = Math.max(1, Math.floor(samples.length / segmentCount));
+
+    for (let segmentIndex = 0; segmentIndex < segmentCount; segmentIndex += 1) {
+      const start = segmentIndex * segmentLength;
+      const end =
+        segmentIndex === segmentCount - 1
+          ? samples.length
+          : Math.min(samples.length, start + segmentLength);
+      let sumAbs = 0;
+      let sumSquares = 0;
+      let peak = 0;
+      let crossings = 0;
+      let positive = 0;
+      let attack = 0;
+
+      for (let i = start; i < end; i += 1) {
+        const sample = samples[i] ?? 0;
+        const abs = Math.abs(sample);
+        sumAbs += abs;
+        sumSquares += sample * sample;
+        peak = Math.max(peak, abs);
+        if (sample > 0) positive += 1;
+        if (i > start) {
+          const previous = samples[i - 1] ?? 0;
+          if ((sample >= 0 && previous < 0) || (sample < 0 && previous >= 0)) {
+            crossings += 1;
+          }
+          attack += Math.max(0, abs - Math.abs(previous));
+        }
+      }
+
+      const length = Math.max(1, end - start);
+      const rms = Math.sqrt(sumSquares / length);
+      const offset = segmentIndex * featuresPerSegment;
+
+      embedding[offset] = sumAbs / length;
+      embedding[offset + 1] = rms;
+      embedding[offset + 2] = crossings / length;
+      embedding[offset + 3] = Math.min(1, peak);
+      embedding[offset + 4] = rms > 0 ? Math.min(1, peak / rms / 8) : 0;
+      embedding[offset + 5] = positive / length;
+      embedding[offset + 6] = Math.min(1, (attack / length) * 20);
+      embedding[offset + 7] = Math.min(1, 1 - Math.min(1, rms * 4));
+    }
+
+    let norm = 0;
+    for (let i = 0; i < embedding.length; i++) norm += embedding[i] * embedding[i];
+    norm = Math.sqrt(norm);
+    if (norm > 0) {
+      for (let i = 0; i < embedding.length; i++) embedding[i] /= norm;
+    }
+    return embedding;
   }
 
   private detectVad(samples: Float32Array): boolean {
@@ -103,41 +179,37 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
     // 1. VAD gating check
     this.isSpeechActive = this.detectVad(inputChannel);
 
-    // 2. Determine target gain (1.0 for enrolled speaker, 0.02 for unknown speaker/background)
-    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 1.0;
-
-    if (!this.filterActive || !this.hasVoiceProfile) {
-      this.targetGain = 1.0;
-    } else if (isRecentlyMatched && this.matchState) {
-      this.targetGain = 1.0;
-    } else {
-      // Active speech suppression for non-enrolled speakers & background voices
-      this.targetGain = this.suppressedGain;
-    }
-
-    // 3. Smooth gain transitions to prevent audio pops (<25ms window)
-    const attackRelease = this.targetGain > this.currentGain ? 0.15 : 0.05;
+    // 2. Maintain ring buffer for speaker verification window
     for (let i = 0; i < inputChannel.length; i++) {
-      this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
       const sample = inputChannel[i] || 0;
-      outputChannel[i] = sample * this.currentGain;
-
-      // Maintain ring buffer for speaker verification window
       this.ringBuffer[this.writeIndex] = sample;
       this.writeIndex = (this.writeIndex + 1) % this.windowSize;
     }
 
-    // 4. Periodically post a voice-window and activity message for verification
+    // 3. Perform 0ms in-worklet speaker verification on active speech frames
     this.samplesSinceLastPost += inputChannel.length;
     if (this.samplesSinceLastPost >= this.postIntervalSamples) {
       this.samplesSinceLastPost = 0;
 
-      // copy most recent windowSize samples into a transferable ArrayBuffer
       const out = new Float32Array(this.windowSize);
       let idx = this.writeIndex;
       for (let i = 0; i < this.windowSize; i++) {
         out[i] = this.ringBuffer[idx] ?? 0;
         idx = (idx + 1) % this.windowSize;
+      }
+
+      if (this.filterActive && this.hasVoiceProfile && this.enrolledEmbedding && this.isSpeechActive) {
+        const candidateEmbedding = this.extractWorkletFeatures(out);
+        const sim = this.computeCosineSimilarity(this.enrolledEmbedding, candidateEmbedding);
+        const inWorkletThreshold = Math.max(0.88, this.similarityThreshold);
+
+        if (sim >= inWorkletThreshold) {
+          this.matchState = true;
+          this.lastMatchTime = currentTime;
+        } else {
+          this.matchState = false;
+          this.lastMatchTime = Number.NEGATIVE_INFINITY;
+        }
       }
 
       try {
@@ -148,7 +220,6 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
           vadConfidence: this.isSpeechActive ? 1 : 0,
         }, [out.buffer]);
       } catch (err) {
-        // If transfer fails for any reason, still try to post without transfer
         this.port.postMessage({
           type: 'VOICE_WINDOW',
           samples: out.buffer,
@@ -157,7 +228,6 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         });
       }
 
-      // Also inform page/content of current speech activity
       this.port.postMessage({
         type: 'VOICE_ACTIVITY',
         isSpeech: this.isSpeechActive,
@@ -166,6 +236,25 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         currentGain: this.currentGain,
         targetGain: this.targetGain,
       });
+    }
+
+    // 4. Determine target gain (1.0 for enrolled speaker, 0.02 for non-enrolled background voices)
+    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 0.6;
+
+    if (!this.filterActive || !this.hasVoiceProfile) {
+      this.targetGain = 1.0;
+    } else if (isRecentlyMatched && this.matchState) {
+      this.targetGain = 1.0;
+    } else {
+      this.targetGain = this.suppressedGain;
+    }
+
+    // 5. Smooth gain transitions to prevent audio pops (<25ms window)
+    const attackRelease = this.targetGain > this.currentGain ? 0.15 : 0.05;
+    for (let i = 0; i < inputChannel.length; i++) {
+      this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
+      const sample = inputChannel[i] || 0;
+      outputChannel[i] = sample * this.currentGain;
     }
 
     return true;
