@@ -20,5 +20,8 @@
     "model:evaluate": "PYTHONPATH=hearly-model/src python3 -m hearly_model.evaluate",
     "model:export": "PYTHONPATH=hearly-model/src python3 -m hearly_model.export_onnx",
     "model:server": "PYTHONPATH=hearly-model/src ./hearly-model/.venv/bin/python -m hearly_model.app"
+  },
+  "dependencies": {
+    "lenis": "^1.3.25"
   }
 }

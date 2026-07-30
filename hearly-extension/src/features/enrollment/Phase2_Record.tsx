@@ -246,6 +246,7 @@ export function Phase2_Record({
   const [activeWord, setActiveWord] = useState(0);
   const [phraseReadyNext, setPhraseReadyNext] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
+  const isSpeechPermanentlyUnsupported = useRef(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [isProcessingPhrase, setIsProcessingPhrase] = useState(false);
   const completeNotifiedRef = useRef(false);
@@ -275,7 +276,7 @@ export function Phase2_Record({
       : phraseReadyNext
         ? 'Phrase captured'
         : !speechSupported
-          ? 'Speech recognition unavailable'
+          ? 'Ready to record (manual mode)'
       : 'Ready to record';
   const activePhraseComplete =
     hasRecording || activeWord >= phraseWords[activePhrase].length;
@@ -424,6 +425,10 @@ export function Phase2_Record({
 
     try {
       phraseAudioRef.current.push(blob);
+      logger.info(
+        `[Hearly] Phrase ${phraseAudioRef.current.length}/${phrases.length} captured — ` +
+        `${(blob.size / 1024).toFixed(1)} KB of audio recorded`,
+      );
       return blob;
     } catch {
       setRecordingError('Could not read that voice sample. Please try again.');
@@ -442,7 +447,13 @@ export function Phase2_Record({
 
     if (isFinalPhrase && !completeNotifiedRef.current) {
       completeNotifiedRef.current = true;
+      logger.info('[Hearly] All phrases recorded. Generating voice embedding...');
       const { embedding, modelStatus } = await embedEnrollmentAudio(phraseAudioRef.current);
+      logger.info(
+        `[Hearly] ✅ Voice training complete! Model: ${modelStatus}, ` +
+        `Embedding dim: ${embedding.length}, ` +
+        `Norm: ${Math.sqrt(Array.from(embedding).reduce((s, v) => s + v * v, 0)).toFixed(4)}`,
+      );
       onTrainingComplete(
         embedding,
         [...phraseAudioRef.current],
@@ -468,8 +479,8 @@ export function Phase2_Record({
 
     if (!RecognitionConstructor) {
       setSpeechSupported(false);
-      setRecordingError('Chrome speech recognition is needed for phrase-by-phrase training.');
-      onToggleRecord();
+      isSpeechPermanentlyUnsupported.current = true;
+      logger.warn('[Hearly] Speech recognition not supported in this browser. Falling back to manual mode.');
       return;
     }
 
@@ -522,14 +533,38 @@ export function Phase2_Record({
       };
 
       recognition.onerror = (event) => {
+        const err = event?.error;
+        logger.warn('[Hearly] Speech recognition error:', err);
+
+        // If it's a permanent block/compatibility issue (like Brave):
+        if (err === 'service-not-allowed') {
+          setSpeechSupported(false);
+          isSpeechPermanentlyUnsupported.current = true;
+          stopRecognition(recognition);
+          return;
+        }
+
+        // If it's general permission denied (not-allowed):
+        if (err === 'not-allowed') {
+          setSpeechSupported(false);
+          isSpeechPermanentlyUnsupported.current = true;
+          setRecordingError('Speech recognition permission is needed to train your voice.');
+          stopRecognition(recognition);
+          onToggleRecord();
+          return;
+        }
+
+        // For user input/transient issues like 'no-speech' or 'aborted':
+        if (err === 'no-speech' || err === 'aborted') {
+          setRecordingError('Speech recognition could not hear the phrase. Please try again.');
+          stopRecognition(recognition);
+          onToggleRecord();
+          return;
+        }
+
+        // For any other unexpected errors, fallback to manual mode:
         setSpeechSupported(false);
-        setRecordingError(
-          event?.error === 'not-allowed'
-            ? 'Speech recognition permission is needed to train your voice.'
-            : 'Speech recognition could not hear the phrase. Please try again.',
-        );
         stopRecognition(recognition);
-        onToggleRecord();
       };
 
       recognition.onend = () => {
@@ -580,7 +615,9 @@ export function Phase2_Record({
   }, [hasRecording, phraseWords, phrases.length]);
 
   const handlePrimaryRecordAction = () => {
-    setSpeechSupported(true);
+    if (!isSpeechPermanentlyUnsupported.current) {
+      setSpeechSupported(true);
+    }
 
     if (hasRecording) {
       setActivePhrase(0);
@@ -594,7 +631,9 @@ export function Phase2_Record({
   };
 
   const handleNextPhrase = () => {
-    setSpeechSupported(true);
+    if (!isSpeechPermanentlyUnsupported.current) {
+      setSpeechSupported(true);
+    }
     setActivePhrase((phraseIndex) => Math.min(phraseIndex + 1, phrases.length - 1));
     setActiveWord(0);
     activeWordRef.current = 0;
@@ -749,6 +788,25 @@ export function Phase2_Record({
             <IconMic width={27} height={27} strokeWidth={1.8} aria-hidden />
           </button>
           {/* Skip Verification removed to require enrollment completion */}
+          {isRecording && !hasRecording && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (recognitionRef.current) {
+                  stopRecognition(recognitionRef.current);
+                }
+                setPhraseReadyNext(true);
+                await completePhrase();
+              }}
+              className={`mx-auto rounded-full px-4 py-1.5 text-[11px] font-semibold transition-all duration-300 ${
+                speechSupported
+                  ? 'border border-white/[0.08] bg-white/[0.04] text-hearly-secondary hover:bg-white/[0.08] hover:text-white'
+                  : 'border border-hearly-accent/30 bg-hearly-accent/[0.08] text-hearly-accent hover:border-hearly-accent/50 hover:bg-hearly-accent/[0.12] hover:text-white'
+              }`}
+            >
+              {speechSupported ? 'Skip Verification' : 'Done Speaking'}
+            </button>
+          )}
         </div>
       )}
       <p className="text-[12px] font-medium text-hearly-secondary">
@@ -757,7 +815,7 @@ export function Phase2_Record({
           : isRecording
           ? speechSupported
             ? 'Read the highlighted phrase aloud'
-            : 'Speech recognition is unavailable'
+            : 'Speech recognition is unavailable. Please read the phrase and tap "Done Speaking".'
           : hasRecording
             ? 'Retake phrases'
             : phraseReadyNext
