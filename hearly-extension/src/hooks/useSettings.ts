@@ -8,7 +8,7 @@ const defaultSettings: AppSettings = {
   notifyNewVersions: true,
   notifyEmails: false,
   hearlyActive: false,
-  transcriptEnabled: false,
+  transcriptEnabled: true,
   similarityThreshold: SPEAKER_SIMILARITY_THRESHOLD,
 };
 

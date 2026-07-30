@@ -114,7 +114,7 @@ export function installMicBridge(platform: string) {
           embeddingModel: embeddingModel,
           threshold: userThreshold,
           workletUrl: chrome.runtime.getURL('hearly-processor.js'),
-          transcriptionEnabled: result.hearly_transcript?.isEnabled === true,
+          transcriptionEnabled: result.hearly_transcript?.isEnabled !== false,
         }, window.location.origin);
       });
       return;

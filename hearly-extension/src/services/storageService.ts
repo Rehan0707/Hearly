@@ -136,11 +136,11 @@ export async function saveTranscriptState(isEnabled: boolean): Promise<void> {
   })
 }
 
-export async function loadTranscriptState(): Promise<{ isEnabled: boolean } | null> {
-  if (!isChromeExtension()) return null;
+export async function loadTranscriptState(): Promise<{ isEnabled: boolean }> {
+  if (!isChromeExtension()) return { isEnabled: true };
   return new Promise((resolve) => {
     chrome.storage.local.get('hearly_transcript', (result) => {
-      resolve((result.hearly_transcript as { isEnabled: boolean } | undefined) ?? null)
+      resolve((result.hearly_transcript as { isEnabled: boolean } | undefined) ?? { isEnabled: true })
     })
   })
 }

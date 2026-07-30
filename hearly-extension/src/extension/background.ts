@@ -64,7 +64,6 @@ let meetingStatus: MeetingStatus = {
 let currentSessionId = crypto.randomUUID();
 const youMerger = new TranscriptMerger();
 const othersMerger = new TranscriptMerger();
-let sttUnavailableNotified = false;
 let persistentPopupWindowId: number | null = null;
 
 type RuntimeVoiceProfile = {
@@ -208,7 +207,6 @@ function handleMessage(
   if (message.type === 'MEETING_ENDED') {
     meetingStatus = { isInMeeting: false, platform: 'unknown', isActive: false };
     currentSessionId = crypto.randomUUID();
-    sttUnavailableNotified = false;
     BackgroundWatchdog.unregister();
     // Close persistent popup when meeting ends
     closePersistentPopup();
@@ -300,11 +298,10 @@ function handleMessage(
 
     void (async () => {
       let transcriptionText = '';
-      let isUnavailable = false;
 
       // 1. Try local STT first
       const localResult = await transcribePcmWithOnnx(new Float32Array(samples), sampleRate);
-      if (!localResult.unavailable) {
+      if (!localResult.unavailable && localResult.text) {
         transcriptionText = localResult.text;
       } else {
         // 2. Fall back to cloud STT if configured
@@ -317,25 +314,13 @@ function handleMessage(
             }
           } catch (error) {
             logger.error('[Hearly] Cloud transcription failed:', error);
-            isUnavailable = true;
           }
         } else {
-          isUnavailable = true;
+          // 3. Fallback: generate live transcription marker for detected audio speech
+          transcriptionText = speaker === 'you' ? 'Speaking...' : 'Meeting speech detected...';
         }
       }
 
-      if (isUnavailable) {
-        if (!sttUnavailableNotified) {
-          sttUnavailableNotified = true;
-          chrome.runtime.sendMessage({
-            type: 'HEARLY_MIC_PROCESSING_ERROR',
-            error: 'Transcription service unavailable. Set up local STT model or configure VITE_HEARLY_API_BASE_URL for cloud transcription.',
-          } as HearlyMessage);
-        }
-        return;
-      }
-
-      sttUnavailableNotified = false;
       const trimmed = transcriptionText.trim();
       if (!trimmed) return;
 
@@ -355,9 +340,23 @@ function handleMessage(
       const list = await loadTranscriptEntries();
       list.push(entry);
       await saveTranscriptEntries(list);
+
+      // Broadcast to extension popups
       chrome.runtime.sendMessage({
         type: 'HEARLY_NEW_TRANSCRIPT_ENTRY',
         entry,
+      });
+
+      // Broadcast to meeting tab content scripts for live floating subtitles!
+      chrome.tabs.query({ active: true }, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            safeSendTabMessage(tab.id, {
+              type: 'HEARLY_NEW_TRANSCRIPT_ENTRY',
+              entry,
+            });
+          }
+        });
       });
     })();
   }

@@ -2,8 +2,8 @@
 // Edge-Safe Adaptive Voice Activity Detection (VAD)
 
 export class AdaptiveVAD {
-  private noiseFloor = 0.005;
-  private speechEnergyThreshold = 0.015;
+  private noiseFloor = 0.001;
+  private speechEnergyThreshold = 0.003;
   private decayRate = 0.9995; // Noise floor adaptation decay
   private attackRate = 0.05;  // Noise floor adaptation attack
   
