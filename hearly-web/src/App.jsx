@@ -5,10 +5,10 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import VideoShowcase from './components/VideoShowcase';
 import DownloadSection from './components/DownloadSection';
-import DevelopersSection from './components/DevelopersSection';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
 import Checkout from './components/Checkout';
+import WaitlistModal from './components/WaitlistModal';
 
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { Mic, History } from 'lucide-react';
@@ -18,13 +18,18 @@ import SectionHeader from './components/SectionHeader';
 import HearyPopupMockup from './components/HearyPopupMockup';
 import CustomCursor from './components/ui/CustomCursor';
 
-
-
 /* ─── Main App ─── */
 function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentView, setCurrentView] = useState('landing');
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [waitlistPlan, setWaitlistPlan] = useState(null);
+
+  const handleOpenWaitlist = (planName = null) => {
+    setWaitlistPlan(planName);
+    setIsWaitlistOpen(true);
+  };
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -78,6 +83,11 @@ function App() {
   return (
     <div className="app">
       <CustomCursor />
+      <WaitlistModal
+        isOpen={isWaitlistOpen}
+        onClose={() => setIsWaitlistOpen(false)}
+        defaultPlan={waitlistPlan}
+      />
       <motion.div
         style={{
           position: 'fixed',
@@ -143,11 +153,11 @@ function App() {
         }}
       />
 
-      <Navbar />
+      <Navbar onOpenWaitlist={handleOpenWaitlist} />
 
       <main style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto' }}>
-          <Hero />
+          <Hero onOpenWaitlist={handleOpenWaitlist} />
 
           {/* ─── Video Showcase (GSAP Parallax) ─── */}
           <VideoShowcase />
@@ -264,25 +274,16 @@ function App() {
           </section>
 
           {/* ─── Pricing Section ─── */}
-          <Pricing onSelectPlan={(plan) => {
-            setSelectedPlan(plan);
-            setCurrentView('checkout');
-            window.scrollTo(0, 0);
-          }} />
-
-          <div className="section-divider" />
-
-          {/* ─── Developers Section ─── */}
-          <DevelopersSection />
+          <Pricing onOpenWaitlist={handleOpenWaitlist} />
         </div>
       </main>
 
       {/* ─── Download / Add to Chrome Section ─── */}
       <div style={{ position: 'relative', zIndex: 1, marginBottom: '10px' }}>
-        <DownloadSection />
+        <DownloadSection onOpenWaitlist={handleOpenWaitlist} />
       </div>
 
-      <HearyFooter />
+      <HearyFooter onOpenWaitlist={handleOpenWaitlist} />
     </div>
   );
 }

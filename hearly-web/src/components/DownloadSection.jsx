@@ -1,8 +1,9 @@
 
 import Antigravity from './Antigravity';
+import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function DownloadSection() {
+export default function DownloadSection({ onOpenWaitlist }) {
   return (
     <section
       style={{
@@ -66,13 +67,13 @@ export default function DownloadSection() {
               fontSize: 'clamp(2.4rem, 5vw, 4rem)',
               lineHeight: 1.1,
               color: '#FFFFFF',
-              maxWidth: '600px',
+              maxWidth: '650px',
               letterSpacing: '-0.02em',
               marginBottom: '40px',
             }}
           >
-            Add Hearly to{' '}
-            <span style={{ color: 'var(--brand-blue)' }}>Chrome</span>
+            Be the First to Experience{' '}
+            <span style={{ color: 'var(--brand-crimson)' }}>Hearly</span>
           </h2>
 
           <div
@@ -87,11 +88,7 @@ export default function DownloadSection() {
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                toast('Preparing download...', { 
-                  description: 'The extension will be available in the Chrome Web Store soon.',
-                  icon: '⬇️',
-                  style: { background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-subtle)' }
-                });
+                if (onOpenWaitlist) onOpenWaitlist();
               }}
               style={{
                 display: 'inline-flex',
@@ -121,7 +118,8 @@ export default function DownloadSection() {
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              Add to Chrome — Free
+              <Sparkles size={16} />
+              Join Waitlist — Get Early Access
             </a>
 
             {/* Secondary CTA */}

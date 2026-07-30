@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Globe, Menu, X } from 'lucide-react';
+import { ChevronDown, Sparkles, Menu, X } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import { toast } from 'sonner';
 
@@ -12,7 +12,7 @@ const navLinks = [
   { label: 'Resources', href: '#', hasDropdown: true },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onOpenWaitlist }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(null);
@@ -126,11 +126,7 @@ export default function Navbar() {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            toast('Preparing download...', { 
-              description: 'The extension will be available in the Chrome Web Store soon.',
-              icon: '⬇️',
-              style: { background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-subtle)' }
-            });
+            if (onOpenWaitlist) onOpenWaitlist();
           }}
           style={{
             display: 'flex',
@@ -147,8 +143,8 @@ export default function Navbar() {
             transition: 'all 0.2s ease',
           }}
         >
-          Add to Chrome
-          <Globe size={16} strokeWidth={2} />
+          Join Waitlist
+          <Sparkles size={16} strokeWidth={2} />
         </a>
 
         {/* Mobile Hamburger */}

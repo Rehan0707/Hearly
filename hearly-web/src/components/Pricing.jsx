@@ -1,28 +1,26 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Sparkles, Loader2 } from 'lucide-react';
+import { Check, Sparkles, Lock } from 'lucide-react';
 import HolographicCard from './ui/holographic-card';
 
 const pricingTiers = [
   {
     name: 'Basic',
     description: 'For individuals exploring voice intelligence.',
-    price: '$0',
-    frequency: '/month',
+    priceBadge: 'Revealed at Launch',
     features: [
       '10 hours of transcription/month',
       'Basic speaker identification',
       'Standard latency (~1s)',
       'Community support',
     ],
-    cta: 'Get Started Free',
+    cta: 'Join Waitlist for Basic',
     isPopular: false,
   },
   {
     name: 'Pro',
     description: 'For professionals and power users.',
-    price: '$9',
-    frequency: '/month',
+    priceBadge: 'Revealed at Launch',
     features: [
       'Unlimited transcription',
       'Real-time emotion detection',
@@ -30,14 +28,13 @@ const pricingTiers = [
       'Sub-200ms ultra-low latency',
       'Priority email support',
     ],
-    cta: 'Start 14-Day Trial',
+    cta: 'Join Waitlist for Pro',
     isPopular: true,
   },
   {
     name: 'Enterprise',
     description: 'For large teams requiring strict security.',
-    price: 'Custom',
-    frequency: '',
+    priceBadge: 'Revealed at Launch',
     features: [
       'Custom neural models',
       'SSO & SAML integration',
@@ -45,70 +42,21 @@ const pricingTiers = [
       '24/7 priority phone support',
       'Custom SLA',
     ],
-    cta: 'Contact Sales',
+    cta: 'Join Waitlist for Enterprise',
     isPopular: false,
   },
 ];
 
-export default function Pricing({ onSelectPlan }) {
-  const [isAnnual, setIsAnnual] = useState(true);
-  const [toast, setToast] = useState(null);
-  const [loadingTier, setLoadingTier] = useState(null);
-
-  const handleCTA = (e, tier) => {
+export default function Pricing({ onOpenWaitlist }) {
+  const handleCTA = (e, tierName) => {
     e.preventDefault();
-    if (tier.name === 'Enterprise') {
-      setToast('Please contact sales@hearly.com for enterprise plans.');
-      setTimeout(() => setToast(null), 4000);
-      return;
+    if (onOpenWaitlist) {
+      onOpenWaitlist(tierName);
     }
-
-    setLoadingTier(tier.name);
-    setTimeout(() => {
-      setLoadingTier(null);
-      if (onSelectPlan) {
-        onSelectPlan({
-          ...tier,
-          isAnnual
-        });
-      }
-    }, 600);
   };
 
   return (
     <section id="pricing" style={{ padding: '140px 0', position: 'relative' }}>
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            style={{
-              position: 'fixed',
-              bottom: '40px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: '#050505',
-              border: '1px solid var(--brand-crimson)',
-              color: '#FFFFFF',
-              padding: '16px 24px',
-              borderRadius: '12px',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              boxShadow: '0 10px 40px rgba(186, 247, 43, 0.2)',
-              fontFamily: 'var(--font-body)',
-              fontWeight: 500,
-            }}
-          >
-            <Sparkles size={18} color="var(--brand-crimson)" />
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="section-container">
         {/* Header */}
         <motion.div
@@ -119,47 +67,29 @@ export default function Pricing({ onSelectPlan }) {
           style={{ textAlign: 'center', marginBottom: '72px' }}
         >
           <h2 style={{ color: 'var(--text-primary)', marginBottom: '20px' }}>
-            Simple pricing. <span style={{ color: 'var(--text-secondary)' }}>Infinite value.</span>
+            Flexible plans. <span style={{ color: 'var(--text-secondary)' }}>Prices revealed soon.</span>
           </h2>
-          <p style={{ maxWidth: '560px', margin: '0 auto', fontSize: '1.05rem', marginBottom: '40px' }}>
-            Choose the perfect plan for your voice intelligence needs. No hidden fees or surprise charges.
+          <p style={{ maxWidth: '620px', margin: '0 auto', fontSize: '1.05rem', marginBottom: '32px', lineHeight: 1.6 }}>
+            Our Chrome extension is launching soon! Official plan pricing will be announced at launch. Join the waitlist now to unlock exclusive early-bird discounts and launch perks.
           </p>
 
-          {/* Billing Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-            <span style={{ color: isAnnual ? 'var(--text-secondary)' : 'var(--text-primary)', fontWeight: 500 }}>Monthly</span>
-            <button
-              onClick={() => setIsAnnual(!isAnnual)}
-              style={{
-                width: '56px',
-                height: '32px',
-                background: isAnnual ? 'var(--brand-crimson)' : 'rgba(255,255,255,0.1)',
-                borderRadius: '100px',
-                position: 'relative',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-            >
-              <motion.div
-                layout
-                initial={false}
-                animate={{
-                  x: isAnnual ? 26 : 4,
-                }}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  background: isAnnual ? '#050505' : 'var(--text-primary)',
-                  borderRadius: '50%',
-                  position: 'absolute',
-                  top: '4px',
-                }}
-              />
-            </button>
-            <span style={{ color: isAnnual ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 500 }}>
-              Annually <span style={{ color: 'var(--brand-crimson)', fontSize: '0.8rem', marginLeft: '4px' }}>Save 20%</span>
-            </span>
+          {/* Launch Notice Banner */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: 'rgba(186, 247, 43, 0.08)',
+              border: '1px solid var(--brand-crimson-glow)',
+              padding: '10px 20px',
+              borderRadius: '100px',
+              color: 'var(--brand-crimson)',
+              fontSize: '0.88rem',
+              fontWeight: 600,
+            }}
+          >
+            <Lock size={15} />
+            Pricing Unlocks at Official Launch — Join Waitlist for Early Access
           </div>
         </motion.div>
 
@@ -173,12 +103,6 @@ export default function Pricing({ onSelectPlan }) {
           }}
         >
           {pricingTiers.map((tier, index) => {
-            const priceDisplay = tier.price === 'Custom' 
-              ? 'Custom' 
-              : isAnnual 
-                ? `$${Math.floor(parseInt(tier.price.replace('$', '')) * 0.8)}` 
-                : tier.price;
-
             return (
               <motion.div
                 key={tier.name}
@@ -229,43 +153,33 @@ export default function Pricing({ onSelectPlan }) {
                     {tier.description}
                   </p>
 
-                  <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'baseline' }}>
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={isAnnual ? 'annual' : 'monthly'}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.2 }}
-                        style={{ fontSize: '3rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.03em', display: 'inline-block' }}
-                      >
-                        {priceDisplay}
-                      </motion.span>
-                    </AnimatePresence>
-                    {tier.frequency && (
-                      <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginLeft: '4px' }}>
-                        {tier.frequency}
-                      </span>
-                    )}
+                  <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '1.5rem',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      <Lock size={18} style={{ color: 'var(--brand-crimson)' }} />
+                      Revealing Soon
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Prices announced at official launch
+                    </span>
                   </div>
 
                   <a
                     href="#"
-                    onClick={(e) => handleCTA(e, { ...tier, price: priceDisplay })}
+                    onClick={(e) => handleCTA(e, tier.name)}
                     className={tier.isPopular ? "btn-primary" : "btn-outline"}
                     style={{ width: '100%', justifyContent: 'center', marginBottom: '40px' }}
                   >
-                    {loadingTier === tier.name ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <Loader2 size={20} />
-                      </motion.div>
-                    ) : (
-                      tier.cta
-                    )}
+                    {tier.cta}
                   </a>
 
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>

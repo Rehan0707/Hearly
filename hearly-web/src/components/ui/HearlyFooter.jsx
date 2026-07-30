@@ -3,7 +3,7 @@
 import logo from "../../assets/logo.svg";
 import { toast } from 'sonner';
 
-function HearyFooter() {
+function HearyFooter({ onOpenWaitlist }) {
   const handleLinkClick = (e, name) => {
     const href = e.currentTarget.getAttribute('href');
     if (href === '#') {
@@ -27,7 +27,7 @@ function HearyFooter() {
         {/* Right Links */}
         <div className="flex gap-16 md:gap-24 font-medium mr-4 md:mr-12">
           <div className="flex flex-col gap-4 text-[0.95rem] text-[#707070]">
-            <a href="#" onClick={(e) => handleLinkClick(e, 'Add to Chrome')} className="hover:text-[#AB1509] transition-colors">Add to Chrome</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); if (onOpenWaitlist) onOpenWaitlist(); }} className="hover:text-[#AB1509] transition-colors">Join Waitlist</a>
             <a href="#features" className="hover:text-[#AB1509] transition-colors">Product</a>
             <a href="#" onClick={(e) => handleLinkClick(e, 'Docs')} className="hover:text-[#AB1509] transition-colors">Docs</a>
             <a href="#" onClick={(e) => handleLinkClick(e, 'Changelog')} className="hover:text-[#AB1509] transition-colors">Changelog</a>
