@@ -46,11 +46,23 @@ export default function VideoShowcase() {
     };
   }, []);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().then(() => setPlaying(true)).catch((err) => {
+        console.warn('Autoplay prevented by browser:', err);
+      });
+    }
+  }, []);
+
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) { v.play(); setPlaying(true); }
-    else { v.pause(); setPlaying(false); }
+    if (v.paused) { 
+      v.play().then(() => setPlaying(true)).catch(() => {}); 
+    } else { 
+      v.pause(); 
+      setPlaying(false); 
+    }
   };
 
   const toggleMute = (e) => {
@@ -92,10 +104,12 @@ export default function VideoShowcase() {
           {/* Video */}
           <video
             ref={videoRef}
-            src={`${import.meta.env.BASE_URL}hearly-demo.mp4`.replace('//', '/')}
+            src="./hearly-demo.mp4"
+            autoPlay
             muted
             playsInline
             loop
+            preload="auto"
             style={{
               position: 'absolute',
               inset: 0,
