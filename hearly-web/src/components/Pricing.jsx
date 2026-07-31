@@ -117,36 +117,11 @@ export default function Pricing({ onOpenWaitlist }) {
                     padding: '40px 32px',
                     borderRadius: '24px',
                     height: '100%',
-                    backgroundColor: tier.isPopular ? 'rgba(30, 30, 30, 0.8)' : 'rgba(20, 20, 20, 0.6)',
-                    border: tier.isPopular ? '1px solid var(--brand-crimson)' : '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: tier.isPopular 
-                      ? '0 20px 40px -10px rgba(186, 247, 43, 0.15), inset 0 1px 0 rgba(186, 247, 43, 0.3)' 
-                      : 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                    backgroundColor: 'rgba(20, 20, 20, 0.6)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                   }}
                 >
-                  {tier.isPopular && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      background: 'var(--brand-crimson)',
-                      color: '#050505',
-                      padding: '6px 16px',
-                      borderRadius: '100px',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                      boxShadow: '0 4px 12px rgba(186, 247, 43, 0.3)',
-                    }}>
-                      <Sparkles size={14} />
-                      Most Popular
-                    </div>
-                  )}
 
                   <h3 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{tier.name}</h3>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '24px', minHeight: '44px' }}>
@@ -176,7 +151,7 @@ export default function Pricing({ onOpenWaitlist }) {
                   <a
                     href="#"
                     onClick={(e) => handleCTA(e, tier.name)}
-                    className={tier.isPopular ? "btn-primary" : "btn-outline"}
+                    className={tier.name === 'Pro' ? "btn-primary" : "btn-outline"}
                     style={{ width: '100%', justifyContent: 'center', marginBottom: '40px' }}
                   >
                     {tier.cta}
@@ -186,7 +161,7 @@ export default function Pricing({ onOpenWaitlist }) {
                     {tier.features.map((feature, i) => (
                       <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                         <div style={{
-                          color: tier.isPopular ? 'var(--brand-crimson)' : 'var(--text-primary)',
+                          color: 'var(--brand-crimson)',
                           marginTop: '2px'
                         }}>
                           <Check size={18} strokeWidth={2.5} />
