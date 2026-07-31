@@ -47,11 +47,27 @@ export default function VideoShowcase() {
   }, []);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().then(() => setPlaying(true)).catch((err) => {
-        console.warn('Autoplay prevented by browser:', err);
-      });
-    }
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!videoRef.current) return;
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
+            videoRef.current.play().then(() => setPlaying(true)).catch(() => {});
+          } else {
+            videoRef.current.pause();
+            setPlaying(false);
+          }
+        });
+      },
+      { threshold: [0, 0.2, 0.5] }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
   }, []);
 
   const togglePlay = () => {
