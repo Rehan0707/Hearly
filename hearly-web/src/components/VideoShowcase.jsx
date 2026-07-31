@@ -92,7 +92,7 @@ export default function VideoShowcase() {
           {/* Video */}
           <video
             ref={videoRef}
-            src="/hearly-demo.mp4"
+            src={`${import.meta.env.BASE_URL}hearly-demo.mp4`.replace('//', '/')}
             muted
             playsInline
             loop
