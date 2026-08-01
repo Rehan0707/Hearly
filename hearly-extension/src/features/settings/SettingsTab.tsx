@@ -3,15 +3,12 @@ import { Button, Modal } from '@/ui/shared';
 import { AppFooter } from './AppFooter';
 import { VoiceProfileCard } from './VoiceProfileCard';
 import { SensitivityCard } from './SensitivityCard';
-import { ApiKeyCard } from './ApiKeyCard';
 
 export interface SettingsTabProps {
   userName: string;
   threshold: number;
-  groqApiKey?: string;
   subscription?: { isPro: boolean; planName: string } | null;
   onThresholdChange: (v: number) => void;
-  onSaveApiKey: (key: string) => void;
   onRetrain: () => void;
   onRemoveConfirmed: () => void;
 }
@@ -19,10 +16,8 @@ export interface SettingsTabProps {
 export function SettingsTab({
   userName,
   threshold,
-  groqApiKey,
   subscription,
   onThresholdChange,
-  onSaveApiKey,
   onRetrain,
   onRemoveConfirmed,
 }: SettingsTabProps) {
@@ -49,11 +44,6 @@ export function SettingsTab({
         <SensitivityCard
           threshold={threshold}
           onThresholdChange={onThresholdChange}
-        />
-
-        <ApiKeyCard
-          groqApiKey={groqApiKey}
-          onSaveKey={onSaveApiKey}
         />
 
         <AppFooter subscription={subscription} />

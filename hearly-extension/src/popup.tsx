@@ -484,10 +484,8 @@ function PopupApp() {
               <SettingsTab
                 userName={isEnrolled ? userName : '-'}
                 threshold={settings.similarityThreshold}
-                groqApiKey={settings.groqApiKey}
                 subscription={subscription}
                 onThresholdChange={(v) => update({ ...settings, similarityThreshold: v })}
-                onSaveApiKey={(key) => update({ ...settings, groqApiKey: key })}
                 onRetrain={openEnrollment}
                 onRemoveConfirmed={() => {
                   enrollmentActions.clearProfile();
