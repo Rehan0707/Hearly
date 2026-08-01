@@ -1,6 +1,8 @@
 // Automated Waitlist Confirmation Email Service for Hearly
+// Official Contact Email: hearly.in@gmail.com
 
 const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || '';
+const OFFICIAL_EMAIL = 'hearly.in@gmail.com';
 
 /**
  * Sends a welcome/confirmation email to the waitlist subscriber.
@@ -29,8 +31,9 @@ export async function sendWaitlistConfirmationEmail(userEmail, useCase = 'Studen
         </p>
       </div>
 
-      <div style="border-top: 1px solid #222; pt: 20px; margin-top: 24px; font-size: 12px; color: #666; text-align: center;">
+      <div style="border-top: 1px solid #222; padding-top: 20px; margin-top: 24px; font-size: 12px; color: #666; text-align: center;">
         <p style="margin: 0 0 6px 0;">Hearly — Next-Gen AI Voice Intelligence</p>
+        <p style="margin: 0 0 6px 0; color: #888;">Contact: <a href="mailto:${OFFICIAL_EMAIL}" style="color: #BAF72B; text-decoration: none;">${OFFICIAL_EMAIL}</a></p>
         <a href="https://hearly.live" style="color: #BAF72B; text-decoration: none;">https://hearly.live</a>
       </div>
     </div>
@@ -46,7 +49,8 @@ export async function sendWaitlistConfirmationEmail(userEmail, useCase = 'Studen
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: 'Hearly <welcome@hearly.live>',
+          from: 'Hearly <onboarding@resend.dev>',
+          reply_to: OFFICIAL_EMAIL,
           to: [userEmail],
           subject: 'Welcome to the Hearly Waitlist! 🚀',
           html: emailHtml,
@@ -54,7 +58,7 @@ export async function sendWaitlistConfirmationEmail(userEmail, useCase = 'Studen
       });
 
       if (response.ok) {
-        console.log('[EmailService] Confirmation email sent successfully via Resend to:', userEmail);
+        console.log('[EmailService] Confirmation email sent successfully to:', userEmail);
         return { success: true };
       }
     } catch (err) {
@@ -63,6 +67,6 @@ export async function sendWaitlistConfirmationEmail(userEmail, useCase = 'Studen
   }
 
   // 2. Log confirmation trigger for preview
-  console.log('[EmailService] Confirmation email queued for subscriber:', userEmail);
+  console.log('[EmailService] Confirmation email prepared from', OFFICIAL_EMAIL, 'for subscriber:', userEmail);
   return { success: true };
 }
