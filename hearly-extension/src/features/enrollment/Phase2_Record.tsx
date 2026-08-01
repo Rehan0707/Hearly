@@ -792,8 +792,7 @@ export function Phase2_Record({
           >
             <IconMic width={27} height={27} strokeWidth={1.8} aria-hidden />
           </button>
-          {/* Skip Verification removed to require enrollment completion */}
-          {isRecording && !hasRecording && (
+          {isRecording && !hasRecording && !speechSupported && (
             <button
               type="button"
               onClick={async () => {
@@ -806,13 +805,9 @@ export function Phase2_Record({
                 setPhraseReadyNext(true);
                 await completePhrase();
               }}
-              className={`mx-auto rounded-full px-4 py-1.5 text-[11px] font-semibold transition-all duration-300 ${
-                speechSupported
-                  ? 'border border-white/[0.08] bg-white/[0.04] text-hearly-secondary hover:bg-white/[0.08] hover:text-white'
-                  : 'border border-hearly-accent/30 bg-hearly-accent/[0.08] text-hearly-accent hover:border-hearly-accent/50 hover:bg-hearly-accent/[0.12] hover:text-white'
-              }`}
+              className="mx-auto rounded-full border border-hearly-accent/30 bg-hearly-accent/[0.08] px-4 py-1.5 text-[11px] font-semibold text-hearly-accent transition-all duration-300 hover:border-hearly-accent/50 hover:bg-hearly-accent/[0.12] hover:text-white"
             >
-              {speechSupported ? 'Skip Verification' : 'Done Speaking'}
+              Done Speaking
             </button>
           )}
         </div>
