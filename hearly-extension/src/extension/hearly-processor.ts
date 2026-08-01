@@ -255,7 +255,7 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
     }
 
     // 4. Determine target gain (1.0 for enrolled speaker, 0.0 for non-enrolled background voices)
-    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 0.20;
+    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 0.15;
     const isMatchedNow = isRecentlyMatched && this.matchState;
 
     // 5. Zero-latency look-ahead pre-buffer & instant gain activation/deactivation
@@ -283,8 +283,8 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         this.targetGain = this.suppressedGain;
       }
 
-      // Fast attack (0.45) on voice match, instant hard mute drop (0.95) on background voice
-      const attackRelease = this.targetGain > this.currentGain ? 0.45 : 0.95;
+      // Fast attack (0.45) on voice match, instant hard mute drop (0.98) on background voice
+      const attackRelease = this.targetGain > this.currentGain ? 0.45 : 0.98;
       this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
       outputChannel[i] = delayedSample * this.currentGain;
     }
