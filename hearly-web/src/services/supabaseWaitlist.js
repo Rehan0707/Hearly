@@ -8,7 +8,7 @@ const SUPABASE_URL =
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  'sb_publishable_9XEjHbVGgMCZp3atw2I7cw_mv1YvmeOnpx';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsd3pja2x4c2t2ZmRtb2h5enhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MjM5NjEsImV4cCI6MjEwMDk5OTk2MX0.IhvGP4YeXXj2FjBqtb2DA7trE0FLwXdHoxPkExoGJ4M';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
