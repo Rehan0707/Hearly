@@ -53,20 +53,20 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   };
 
   const handleCopyExport = (format: 'jira' | 'github' | 'slack' | 'email' | 'minutes') => {
-    const mockData = {
+    const exportData = {
       title: meetingTitle,
-      summary: transcriptContext.slice(0, 200) || 'Active meeting discussion context.',
-      actionItems: ['Review architectural design doc', 'Set up benchmark tests'],
-      decisions: ['Approved ECAPA-TDNN speaker verification upgrade'],
+      summary: transcriptContext.slice(0, 300) || 'Active meeting discussion session.',
+      actionItems: transcriptContext ? [transcriptContext.slice(0, 150)] : [],
+      decisions: [],
       transcriptEntries: [{ speaker: 'Me', text: transcriptContext }],
     };
 
     let content = '';
-    if (format === 'jira') content = generateJiraMarkdown(mockData);
-    if (format === 'github') content = generateGitHubIssue(mockData);
-    if (format === 'slack') content = generateSlackUpdate(mockData);
-    if (format === 'email') content = generateFollowUpEmail(mockData);
-    if (format === 'minutes') content = generateMeetingMinutes(mockData);
+    if (format === 'jira') content = generateJiraMarkdown(exportData);
+    if (format === 'github') content = generateGitHubIssue(exportData);
+    if (format === 'slack') content = generateSlackUpdate(exportData);
+    if (format === 'email') content = generateFollowUpEmail(exportData);
+    if (format === 'minutes') content = generateMeetingMinutes(exportData);
 
     navigator.clipboard.writeText(content);
     setCopiedFormat(format);
