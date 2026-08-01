@@ -19,16 +19,24 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
     }
 
     setIsSubmitting(true);
-    await submitWaitlistEntry({
+    const result = await submitWaitlistEntry({
       email,
       use_case: role,
       interested_plan: defaultPlan || 'Basic',
     });
-    
-    // Trigger automated confirmation email
+    setIsSubmitting(false);
+
+    if (result && result.isDuplicate) {
+      toast.info("You've already joined the waitlist!", {
+        description: result.message || "We already have your email registered and will notify you when Hearly launches.",
+      });
+      setIsSubmitted(true);
+      return;
+    }
+
+    // Trigger automated confirmation email for new subscribers
     sendWaitlistConfirmationEmail(email, role).catch(() => {});
 
-    setIsSubmitting(false);
     setIsSubmitted(true);
     toast.success('Successfully added to the Hearly waitlist!', {
       description: "We've saved your details and will notify you when Hearly launches.",

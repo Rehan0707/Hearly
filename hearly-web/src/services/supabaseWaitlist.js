@@ -15,29 +15,49 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  */
 export async function submitWaitlistEntry(entry) {
   const timestamp = new Date().toISOString();
+  const normalizedEmail = (entry.email || '').trim().toLowerCase();
+
   const fullEntry = {
-    email: (entry.email || '').trim().toLowerCase(),
+    email: normalizedEmail,
     use_case: entry.use_case || 'Student',
     interested_plan: entry.interested_plan || 'Basic',
     created_at: timestamp,
   };
 
-  // 1. Always back up to localStorage so signups are never lost
+  // 1. Check local storage for duplicate email
   try {
     const localWaitlist = JSON.parse(localStorage.getItem('hearly_waitlist') || '[]');
-    localWaitlist.push(fullEntry);
-    localStorage.setItem('hearly_waitlist', JSON.stringify(localWaitlist));
+    const existing = localWaitlist.find((e) => (e.email || '').toLowerCase() === normalizedEmail);
+    if (existing) {
+      console.log('[Waitlist] Duplicate detected in local storage:', normalizedEmail);
+      return { success: false, isDuplicate: true, message: 'You have already joined the Hearly waitlist with this email!' };
+    }
   } catch (err) {
-    console.warn('[Waitlist] Failed to write to localStorage backup', err);
+    console.warn('[Waitlist] Error checking localStorage backup:', err);
   }
 
-  // 2. Insert into Supabase table 'waitlist' using public anon key
+  // 2. Insert into Supabase table 'waitlist'
   try {
     const { data, error } = await supabase.from('waitlist').insert([fullEntry]);
+
     if (error) {
-      console.warn('[Supabase] Waitlist insert error:', error.message);
+      // Check for Postgres Unique Constraint Violation (Code 23505)
+      if (error.code === '23505' || error.message.toLowerCase().includes('duplicate') || error.message.toLowerCase().includes('unique')) {
+        console.warn('[Supabase] Duplicate waitlist entry blocked:', normalizedEmail);
+        return { success: false, isDuplicate: true, message: 'You have already joined the Hearly waitlist with this email address.' };
+      }
+
+      console.warn('[Supabase] Waitlist insert warning:', error.message);
       return { success: true, error: error.message };
     }
+
+    // Save to local storage after successful insert
+    try {
+      const localWaitlist = JSON.parse(localStorage.getItem('hearly_waitlist') || '[]');
+      localWaitlist.push(fullEntry);
+      localStorage.setItem('hearly_waitlist', JSON.stringify(localWaitlist));
+    } catch {}
+
     console.log('[Supabase] Waitlist entry saved successfully!');
     return { success: true, data };
   } catch (err) {
