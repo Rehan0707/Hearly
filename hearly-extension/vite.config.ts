@@ -29,6 +29,10 @@ export default defineConfig({
             entry: resolve(__dirname, 'src/extension/injected-mic.ts'),
           },
           {
+            name: 'hearly-processor',
+            entry: resolve(__dirname, 'src/extension/hearly-processor.ts'),
+          },
+          {
             name: 'content-web',
             entry: resolve(__dirname, 'src/extension/content/web.ts'),
           },
@@ -75,7 +79,6 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/extension/background.ts'),
-        'hearly-processor': resolve(__dirname, 'src/extension/hearly-processor.ts'),
       },
       output: {
         entryFileNames: '[name].js',
