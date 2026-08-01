@@ -795,6 +795,9 @@ export function Phase2_Record({
                 if (recognitionRef.current) {
                   stopRecognition(recognitionRef.current);
                 }
+                const totalWordsInPhrase = phraseWords[activePhrase].length;
+                activeWordRef.current = totalWordsInPhrase;
+                setActiveWord(totalWordsInPhrase);
                 setPhraseReadyNext(true);
                 await completePhrase();
               }}
