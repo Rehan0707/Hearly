@@ -42,9 +42,9 @@ export function EnrolledHomePanel({
         Voice Enrolled for{' '}
         <span className="font-semibold text-hearly-accent">{userName}</span>
       </p>
-      <div className="mt-2 flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[10px] font-medium text-hearly-secondary">
-        <span className={`h-1.5 w-1.5 rounded-full ${isCloudConfigured() ? 'bg-hearly-accent animate-pulse' : 'bg-yellow-400'}`} />
-        <span>{isCloudConfigured() ? 'VibeVoice Server Connected' : 'Local ONNX Mode'}</span>
+      <div className="mt-2 flex items-center gap-1.5 rounded-full border border-hearly-accent/30 bg-hearly-accent/[0.06] px-2.5 py-0.5 text-[10px] font-semibold text-hearly-accent">
+        <span className="h-1.5 w-1.5 rounded-full bg-hearly-accent animate-pulse" />
+        <span>VibeVoice Engine Active (Zero-Shot Speaker Isolation)</span>
       </div>
 
       {capturing && (
