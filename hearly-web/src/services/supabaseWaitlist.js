@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
-  import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'https://hlwzcklxskvfdmohyzxg.supabase.co';
-
+const SUPABASE_URL = 'https://hlwzcklxskvfdmohyzxg.supabase.co';
+// Standard public anon key (Restricted by Supabase RLS: INSERT ONLY, NO SELECT/DELETE)
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -25,24 +22,23 @@ export async function submitWaitlistEntry(entry) {
     created_at: timestamp,
   };
 
-  // 1. Always back up to localStorage so no signups are lost locally
+  // 1. Always back up to localStorage so signups are never lost
   try {
     const localWaitlist = JSON.parse(localStorage.getItem('hearly_waitlist') || '[]');
     localWaitlist.push(fullEntry);
     localStorage.setItem('hearly_waitlist', JSON.stringify(localWaitlist));
-    console.log('[Waitlist] Saved entry to local backup:', fullEntry);
   } catch (err) {
     console.warn('[Waitlist] Failed to write to localStorage backup', err);
   }
 
-  // 2. Insert into Supabase table 'waitlist'
+  // 2. Insert into Supabase table 'waitlist' using public anon key
   try {
     const { data, error } = await supabase.from('waitlist').insert([fullEntry]);
     if (error) {
-      console.warn('[Supabase] Waitlist insert response:', error.message);
+      console.warn('[Supabase] Waitlist insert error:', error.message);
       return { success: true, error: error.message };
     }
-    console.log('[Supabase] Waitlist entry saved successfully to Supabase database!');
+    console.log('[Supabase] Waitlist entry saved successfully!');
     return { success: true, data };
   } catch (err) {
     console.error('[Supabase] Exception inserting waitlist entry:', err);
