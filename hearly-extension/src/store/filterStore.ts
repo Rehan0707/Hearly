@@ -9,7 +9,7 @@ interface FilterState {
 }
 
 export const useFilterStore = create<FilterState>((set) => ({
-  isActive: false,
+  isActive: true,
   actions: {
     toggle: () => set((s) => ({ isActive: !s.isActive })),
     setActive: (isActive) => set({ isActive }),

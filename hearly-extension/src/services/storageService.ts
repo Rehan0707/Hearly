@@ -119,11 +119,11 @@ export async function saveFilterState(isActive: boolean): Promise<void> {
   })
 }
 
-export async function loadFilterState(): Promise<{ isActive: boolean } | null> {
-  if (!isChromeExtension()) return null;
+export async function loadFilterState(): Promise<{ isActive: boolean }> {
+  if (!isChromeExtension()) return { isActive: true };
   return new Promise((resolve) => {
     chrome.storage.local.get('hearly_filter', (result) => {
-      resolve((result.hearly_filter as { isActive: boolean } | undefined) ?? null)
+      resolve((result.hearly_filter as { isActive: boolean } | undefined) ?? { isActive: true })
     })
   })
 }

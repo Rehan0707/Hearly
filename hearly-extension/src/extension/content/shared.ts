@@ -106,7 +106,7 @@ export function installMicBridge(platform: string) {
           source: 'hearly-content',
           type: 'MIC_STATE',
           requestId: data.requestId,
-          enabled: result.hearly_filter?.isActive === true,
+          enabled: result.hearly_filter?.isActive !== false,
           embedding:
             embeddingModel === 'fallback'
               ? (profile?.embedding ? Array.from(profile.embedding) : null)
