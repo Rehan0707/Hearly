@@ -1,11 +1,10 @@
 
 import { motion } from 'framer-motion';
-import { Globe } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import logo from '../assets/logo.svg';
-import { toast } from 'sonner';
 import Magnetic from './ui/Magnetic';
 
-export default function Hero() {
+export default function Hero({ onOpenWaitlist }) {
   return (
     <section
       style={{
@@ -117,7 +116,7 @@ export default function Hero() {
           }} />
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--brand-crimson)', flexShrink: 0 }} />
         </span>
-        Now Live — Version 1
+        Coming Soon — Waitlist Open
         <style>{`
           @keyframes pulse-ring {
             0% { transform: scale(1); opacity: 0.8; }
@@ -157,14 +156,10 @@ export default function Hero() {
         <Magnetic strength={0.4}>
           <a href="#" className="btn-primary" onClick={(e) => {
             e.preventDefault();
-            toast('Preparing download...', { 
-              description: 'The extension will be available in the Chrome Web Store soon.',
-              icon: '⬇️',
-              style: { background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-subtle)' }
-            });
+            if (onOpenWaitlist) onOpenWaitlist();
           }}>
-            <Globe size={18} strokeWidth={2} />
-            Add to Chrome
+            <Sparkles size={18} strokeWidth={2} />
+            Join Waitlist
           </a>
         </Magnetic>
         <Magnetic strength={0.3}>

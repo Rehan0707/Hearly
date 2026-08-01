@@ -46,11 +46,39 @@ export default function VideoShowcase() {
     };
   }, []);
 
+  useEffect(() => {
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!videoRef.current) return;
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
+            videoRef.current.play().then(() => setPlaying(true)).catch(() => {});
+          } else {
+            videoRef.current.pause();
+            setPlaying(false);
+          }
+        });
+      },
+      { threshold: [0, 0.2, 0.5] }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) { v.play(); setPlaying(true); }
-    else { v.pause(); setPlaying(false); }
+    if (v.paused) { 
+      v.play().then(() => setPlaying(true)).catch(() => {}); 
+    } else { 
+      v.pause(); 
+      setPlaying(false); 
+    }
   };
 
   const toggleMute = (e) => {
@@ -92,10 +120,12 @@ export default function VideoShowcase() {
           {/* Video */}
           <video
             ref={videoRef}
-            src="/hearly-demo.mp4"
+            src="./hearly-demo.mp4"
+            autoPlay
             muted
             playsInline
             loop
+            preload="auto"
             style={{
               position: 'absolute',
               inset: 0,

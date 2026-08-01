@@ -14,6 +14,8 @@
     "build": "npm run build --workspace hearly-extension && npm run build --workspace hearly-web",
     "build:ext": "npm run build --workspace hearly-extension",
     "build:web": "npm run build --workspace hearly-web",
+    "predeploy": "npm run build:web",
+    "deploy": "gh-pages -d hearly-web/dist",
     "typecheck": "npm run typecheck --workspace hearly-extension",
     "clean": "rm -rf hearly-extension/dist hearly-web/dist hearly-extension/tsconfig.tsbuildinfo",
     "model:train": "PYTHONPATH=hearly-model/src python3 -m hearly_model.train",
@@ -23,5 +25,8 @@
   },
   "dependencies": {
     "lenis": "^1.3.25"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
