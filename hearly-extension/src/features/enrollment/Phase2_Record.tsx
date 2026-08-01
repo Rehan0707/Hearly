@@ -406,6 +406,7 @@ export function Phase2_Record({
     const stream = mediaStreamRef.current;
 
     if (!recorder || recorder.state === 'inactive') {
+      setRecordingError("I didn't get the voice. Please try again or speak this properly.");
       return null;
     }
 
@@ -424,6 +425,10 @@ export function Phase2_Record({
     mediaStreamRef.current = null;
 
     try {
+      if (blob.size < 800) {
+        setRecordingError("I didn't get the voice. Please try again or speak this properly.");
+        return null;
+      }
       phraseAudioRef.current.push(blob);
       logger.info(
         `[Hearly] Phrase ${phraseAudioRef.current.length}/${phrases.length} captured — ` +
@@ -431,7 +436,7 @@ export function Phase2_Record({
       );
       return blob;
     } catch {
-      setRecordingError('Could not read that voice sample. Please try again.');
+      setRecordingError("I didn't get the voice. Please try again or speak this properly.");
       return null;
     } finally {
       setIsProcessingPhrase(false);
@@ -556,7 +561,7 @@ export function Phase2_Record({
 
         // For user input/transient issues like 'no-speech' or 'aborted':
         if (err === 'no-speech' || err === 'aborted') {
-          setRecordingError('Speech recognition could not hear the phrase. Please try again.');
+          setRecordingError("I didn't get the voice. Please try again or speak this properly.");
           stopRecognition(recognition);
           onToggleRecord();
           return;
