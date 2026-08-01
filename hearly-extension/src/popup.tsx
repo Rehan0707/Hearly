@@ -483,20 +483,11 @@ function PopupApp() {
             <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto overflow-x-hidden [-webkit-overflow-scrolling:touch]">
               <SettingsTab
                 userName={isEnrolled ? userName : '-'}
-                notifyVersions={settings.notifyNewVersions}
-                notifyEmails={settings.notifyEmails}
                 threshold={settings.similarityThreshold}
-                similarity={audioStatus.voiceScore ?? 0}
-                matched={audioStatus.voiceMatched ?? false}
-                isSpeech={audioStatus.speechActive ?? false}
-                vadConfidence={audioStatus.speechConfidence ?? 0}
-                gain={(!audioStatus.speechActive || audioStatus.voiceMatched) ? 1.0 : 0.08}
+                groqApiKey={settings.groqApiKey}
                 subscription={subscription}
-                onNotifyVersions={(v) =>
-                  update({ ...settings, notifyNewVersions: v })
-                }
-                onNotifyEmails={(v) => update({ ...settings, notifyEmails: v })}
                 onThresholdChange={(v) => update({ ...settings, similarityThreshold: v })}
+                onSaveApiKey={(key) => update({ ...settings, groqApiKey: key })}
                 onRetrain={openEnrollment}
                 onRemoveConfirmed={() => {
                   enrollmentActions.clearProfile();

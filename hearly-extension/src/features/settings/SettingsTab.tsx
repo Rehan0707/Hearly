@@ -1,44 +1,28 @@
 import { useState } from 'react';
 import { Button, Modal } from '@/ui/shared';
 import { AppFooter } from './AppFooter';
-import { NotificationsCard } from './NotificationsCard';
 import { VoiceProfileCard } from './VoiceProfileCard';
-import { VoiceVerificationTestPanel } from './VoiceVerificationTestPanel';
 import { SensitivityCard } from './SensitivityCard';
-import { DiagnosticPanel } from './DiagnosticPanel';
+import { ApiKeyCard } from './ApiKeyCard';
 
 export interface SettingsTabProps {
   userName: string;
-  notifyVersions: boolean;
-  notifyEmails: boolean;
   threshold: number;
-  similarity: number;
-  matched: boolean;
-  isSpeech: boolean;
-  vadConfidence: number;
-  gain: number;
+  groqApiKey?: string;
   subscription?: { isPro: boolean; planName: string } | null;
-  onNotifyVersions: (v: boolean) => void;
-  onNotifyEmails: (v: boolean) => void;
   onThresholdChange: (v: number) => void;
+  onSaveApiKey: (key: string) => void;
   onRetrain: () => void;
   onRemoveConfirmed: () => void;
 }
 
 export function SettingsTab({
   userName,
-  notifyVersions,
-  notifyEmails,
   threshold,
-  similarity,
-  matched,
-  isSpeech,
-  vadConfidence,
-  gain,
+  groqApiKey,
   subscription,
-  onNotifyVersions,
-  onNotifyEmails,
   onThresholdChange,
+  onSaveApiKey,
   onRetrain,
   onRemoveConfirmed,
 }: SettingsTabProps) {
@@ -51,7 +35,7 @@ export function SettingsTab({
           Settings
         </h2>
         <p className="mt-1.5 text-[12px] leading-relaxed text-hearly-secondary">
-          Manage your voice profile and app preferences
+          Manage your voice profile and voice focus sensitivity
         </p>
       </header>
 
@@ -62,26 +46,14 @@ export function SettingsTab({
           onRemoveRequest={() => setConfirmOpen(true)}
         />
 
-        <VoiceVerificationTestPanel />
-
         <SensitivityCard
           threshold={threshold}
           onThresholdChange={onThresholdChange}
         />
 
-        <DiagnosticPanel
-          similarity={similarity}
-          matched={matched}
-          isSpeech={isSpeech}
-          vadConfidence={vadConfidence}
-          gain={gain}
-        />
-
-        <NotificationsCard
-          notifyVersions={notifyVersions}
-          notifyEmails={notifyEmails}
-          onNotifyVersions={onNotifyVersions}
-          onNotifyEmails={onNotifyEmails}
+        <ApiKeyCard
+          groqApiKey={groqApiKey}
+          onSaveKey={onSaveApiKey}
         />
 
         <AppFooter subscription={subscription} />
