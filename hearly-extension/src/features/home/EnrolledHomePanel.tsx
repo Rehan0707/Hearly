@@ -40,10 +40,6 @@ export function EnrolledHomePanel({
         Voice Enrolled for{' '}
         <span className="font-semibold text-hearly-accent">{userName}</span>
       </p>
-      <div className="mt-2 flex items-center gap-1.5 rounded-full border border-hearly-accent/30 bg-hearly-accent/[0.06] px-2.5 py-0.5 text-[10px] font-semibold text-hearly-accent">
-        <span className="h-1.5 w-1.5 rounded-full bg-hearly-accent animate-pulse" />
-        <span>VibeVoice Engine Active (Zero-Shot Speaker Isolation)</span>
-      </div>
 
       {capturing && (
         <div className="mt-4 w-full max-w-[300px] rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
