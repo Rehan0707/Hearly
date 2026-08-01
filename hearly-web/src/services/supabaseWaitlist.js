@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://hlwzcklxskvfdmohyzxg.supabase.co';
-// Standard public anon key (Restricted by Supabase RLS: INSERT ONLY, NO SELECT/DELETE)
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -10,7 +9,7 @@ const SUPABASE_ANON_KEY =
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * Saves a waitlist submission to Supabase (table: waitlist) and localStorage backup.
+ * Saves a waitlist submission directly to Supabase table: waitlist.
  * @param {{ email: string; use_case: string; interested_plan?: string }} entry
  */
 export async function submitWaitlistEntry(entry) {
@@ -24,44 +23,53 @@ export async function submitWaitlistEntry(entry) {
     created_at: timestamp,
   };
 
-  // 1. Check local storage for duplicate email
+  console.log('[Supabase] Submitting entry directly to database:', fullEntry);
+
+  // 1. Direct fetch call to Supabase REST API to guarantee connection
   try {
-    const localWaitlist = JSON.parse(localStorage.getItem('hearly_waitlist') || '[]');
-    const existing = localWaitlist.find((e) => (e.email || '').toLowerCase() === normalizedEmail);
-    if (existing) {
-      console.log('[Waitlist] Duplicate detected in local storage:', normalizedEmail);
-      return { success: false, isDuplicate: true, message: 'You have already joined the Hearly waitlist with this email!' };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(fullEntry),
+    });
+
+    if (res.status === 201) {
+      const data = await res.json();
+      console.log('[Supabase REST] Entry saved successfully:', data);
+      return { success: true, data };
     }
+
+    if (res.status === 409) {
+      const errorText = await res.text();
+      console.warn('[Supabase REST] Duplicate email blocked by database:', errorText);
+      return { success: false, isDuplicate: true, message: 'You have already joined the Hearly waitlist with this email address.' };
+    }
+
+    const errorText = await res.text();
+    console.warn('[Supabase REST] Response warning:', res.status, errorText);
   } catch (err) {
-    console.warn('[Waitlist] Error checking localStorage backup:', err);
+    console.error('[Supabase REST] Exception:', err);
   }
 
-  // 2. Insert into Supabase table 'waitlist'
+  // 2. Fallback to Supabase JS Client SDK
   try {
     const { data, error } = await supabase.from('waitlist').insert([fullEntry]);
 
     if (error) {
-      // Check for Postgres Unique Constraint Violation (Code 23505)
       if (error.code === '23505' || error.message.toLowerCase().includes('duplicate') || error.message.toLowerCase().includes('unique')) {
-        console.warn('[Supabase] Duplicate waitlist entry blocked:', normalizedEmail);
         return { success: false, isDuplicate: true, message: 'You have already joined the Hearly waitlist with this email address.' };
       }
-
-      console.warn('[Supabase] Waitlist insert warning:', error.message);
-      return { success: true, error: error.message };
+      return { success: false, error: error.message };
     }
 
-    // Save to local storage after successful insert
-    try {
-      const localWaitlist = JSON.parse(localStorage.getItem('hearly_waitlist') || '[]');
-      localWaitlist.push(fullEntry);
-      localStorage.setItem('hearly_waitlist', JSON.stringify(localWaitlist));
-    } catch {}
-
-    console.log('[Supabase] Waitlist entry saved successfully!');
     return { success: true, data };
   } catch (err) {
-    console.error('[Supabase] Exception inserting waitlist entry:', err);
-    return { success: true, error: String(err) };
+    console.error('[Supabase SDK] Exception:', err);
+    return { success: false, error: String(err) };
   }
 }
