@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, CheckCircle2, ArrowRight, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { submitWaitlistEntry } from '../services/supabaseWaitlist';
+import { sendWaitlistConfirmationEmail } from '../services/emailService';
 
 export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
   const [email, setEmail] = useState('');
@@ -23,6 +24,10 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
       use_case: role,
       interested_plan: defaultPlan || 'Basic',
     });
+    
+    // Trigger automated confirmation email
+    sendWaitlistConfirmationEmail(email, role).catch(() => {});
+
     setIsSubmitting(false);
     setIsSubmitted(true);
     toast.success('Successfully added to the Hearly waitlist!', {
