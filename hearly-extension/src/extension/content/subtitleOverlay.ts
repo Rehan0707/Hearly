@@ -69,37 +69,61 @@ export function showHearlySubtitle(entry: TranscriptEntry) {
   if (!text) return;
 
   const root = ensureSubtitleRoot();
-  const speakerLabel = entry.speaker === 'you' ? 'MIC' : 'CALL';
+  const isBackground = entry.speaker === 'background';
+  const speakerLabel = entry.speaker === 'you' ? 'MIC' : isBackground ? 'BACKGROUND VOICE (BLOCKED)' : 'CALL';
   root.replaceChildren();
 
   const badgeRow = document.createElement('div');
   badgeRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;';
 
   const languageBadge = document.createElement('span');
-  languageBadge.style.cssText = `
-    border: 1px solid rgba(181, 240, 61, 0.25);
-    background: rgba(181, 240, 61, 0.08);
-    color: #B5F03D;
-    border-radius: 999px;
-    padding: 3px 9px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-shadow: 0 0 10px rgba(181, 240, 61, 0.2);
-  `;
-  languageBadge.textContent = languageLabel(entry.language);
+  languageBadge.style.cssText = isBackground
+    ? `
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      background: rgba(251, 191, 36, 0.12);
+      color: #FBBF24;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    `
+    : `
+      border: 1px solid rgba(181, 240, 61, 0.25);
+      background: rgba(181, 240, 61, 0.08);
+      color: #B5F03D;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 10px rgba(181, 240, 61, 0.2);
+    `;
+  languageBadge.textContent = isBackground ? 'MUTED FROM MEETING' : languageLabel(entry.language);
 
   const speakerBadge = document.createElement('span');
-  speakerBadge.style.cssText = `
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
-    border-radius: 999px;
-    padding: 3px 9px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-  `;
+  speakerBadge.style.cssText = isBackground
+    ? `
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      background: rgba(251, 191, 36, 0.08);
+      color: #FCD34D;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+    `
+    : `
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.7);
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+    `;
   speakerBadge.textContent = speakerLabel;
 
   const textLine = document.createElement('div');

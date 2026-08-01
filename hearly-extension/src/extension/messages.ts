@@ -54,7 +54,7 @@ export interface HearlyMessage {
   vadConfidence?: number
   unavailable?: boolean
   language?: 'en' | 'hi' | 'mr'
-  speaker?: 'you' | 'others'
+  speaker?: 'you' | 'others' | 'background'
   timestamp?: number
   audioBase64?: string
   installed?: boolean

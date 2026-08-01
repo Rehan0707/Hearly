@@ -5,7 +5,7 @@ import { transcribePcmWithOnnx } from '@/ai/localSttModel';
 import type { TranscriptEntry } from '@/utils/types';
 import { TranscriptMerger } from '@/audio/transcriptMerger';
 import { loadTranscriptEntries, saveTranscriptEntries, loadRuntimeProfile, saveRuntimeProfile } from '@/services/storageService';
-import { isCloudConfigured, transcribeAudioInCloud } from '@/services/cloudService';
+import { isCloudConfigured, transcribeAudioInCloud, transcribeWithGroq } from '@/services/cloudService';
 import { logger } from '@/utils/logger';
 
 function encodeWav(samples: Float32Array, sampleRate: number): Blob {
@@ -299,13 +299,29 @@ function handleMessage(
     void (async () => {
       let transcriptionText = '';
 
-      // 1. Try local STT first
-      const localResult = await transcribePcmWithOnnx(new Float32Array(samples), sampleRate);
-      if (!localResult.unavailable && localResult.text) {
-        transcriptionText = localResult.text;
-      } else {
-        // 2. Fall back to cloud STT if configured
-        if (isCloudConfigured()) {
+      // Check for user-provided Groq API Key in local storage
+      const storageData = await new Promise<{ hearly_app_settings?: { groqApiKey?: string } }>((res) => {
+        chrome.storage.local.get(['hearly_app_settings'], (result) => res(result as any));
+      });
+      const groqKey = storageData?.hearly_app_settings?.groqApiKey;
+
+      if (groqKey) {
+        try {
+          const wavBlob = encodeWav(new Float32Array(samples), sampleRate);
+          const groqText = await transcribeWithGroq(wavBlob, groqKey, language);
+          if (groqText) transcriptionText = groqText;
+        } catch (err) {
+          logger.warn('[Hearly] Groq transcription error:', err);
+        }
+      }
+
+      if (!transcriptionText) {
+        // 1. Try local STT
+        const localResult = await transcribePcmWithOnnx(new Float32Array(samples), sampleRate);
+        if (!localResult.unavailable && localResult.text) {
+          transcriptionText = localResult.text;
+        } else if (isCloudConfigured()) {
+          // 2. Fall back to cloud server STT
           try {
             const wavBlob = encodeWav(new Float32Array(samples), sampleRate);
             const cloudResult = await transcribeAudioInCloud({ audio: wavBlob, language });
@@ -316,8 +332,8 @@ function handleMessage(
             logger.error('[Hearly] Cloud transcription failed:', error);
           }
         } else {
-          // 3. Fallback: generate live transcription marker for detected audio speech
-          transcriptionText = speaker === 'you' ? 'Speaking...' : 'Meeting speech detected...';
+          // 3. Fallback markers
+          transcriptionText = speaker === 'you' ? 'Speaking...' : speaker === 'background' ? 'Background voice muted from call...' : 'Meeting speech detected...';
         }
       }
 

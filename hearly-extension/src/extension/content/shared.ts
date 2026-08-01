@@ -165,6 +165,16 @@ export function installMicBridge(platform: string) {
             score: response.score ?? 0,
             matched: response.matched === true,
           } as HearlyMessage);
+
+          if (response.matched === false && (data.vadConfidence ?? 0) > 0) {
+            chrome.runtime.sendMessage({
+              type: 'HEARLY_TRANSCRIBE_CHUNK',
+              samples: Array.from(new Float32Array(data.samplesBuffer!)),
+              sampleRate: data.sampleRate ?? 48000,
+              speaker: 'background',
+              timestamp: Date.now(),
+            });
+          }
         });
       });
       return;

@@ -10,6 +10,8 @@ const defaultSettings: AppSettings = {
   hearlyActive: false,
   transcriptEnabled: true,
   similarityThreshold: SPEAKER_SIMILARITY_THRESHOLD,
+  groqApiKey: '',
+  geminiApiKey: '',
 };
 
 export function useSettings() {

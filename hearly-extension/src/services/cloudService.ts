@@ -24,6 +24,32 @@ async function assertOk(response: Response): Promise<void> {
   throw new Error(text || `Hearly cloud request failed with ${response.status}`);
 }
 
+export async function transcribeWithGroq(
+  audio: Blob,
+  apiKey: string,
+  language = 'en',
+): Promise<string | null> {
+  try {
+    const formData = new FormData();
+    formData.append('file', audio, 'audio.wav');
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', language);
+
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey.trim()}`,
+      },
+      body: formData,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { text?: string };
+    return data?.text ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function transcribeAudioInCloud({
   audio,
   language,

@@ -11,7 +11,7 @@ export interface VoiceProfile {
 
 export interface TranscriptEntry {
   id: string;
-  speaker: 'you' | 'others';
+  speaker: 'you' | 'others' | 'background';
   text: string;
   language: 'en' | 'hi' | 'mr';
   category?: string;
@@ -30,4 +30,6 @@ export interface AppSettings {
   hearlyActive: boolean;
   transcriptEnabled: boolean;
   similarityThreshold: number;
+  groqApiKey?: string;
+  geminiApiKey?: string;
 }
