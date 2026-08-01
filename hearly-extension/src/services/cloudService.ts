@@ -28,26 +28,34 @@ export async function transcribeWithGroq(
   audio: Blob,
   apiKey: string,
   language = 'en',
+  retries = 2,
 ): Promise<string | null> {
-  try {
-    const formData = new FormData();
-    formData.append('file', audio, 'audio.wav');
-    formData.append('model', 'whisper-large-v3-turbo');
-    formData.append('language', language);
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const formData = new FormData();
+      formData.append('file', audio, 'audio.wav');
+      formData.append('model', 'whisper-large-v3-turbo');
+      formData.append('language', language);
 
-    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey.trim()}`,
-      },
-      body: formData,
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { text?: string };
-    return data?.text ?? null;
-  } catch {
-    return null;
+      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey.trim()}`,
+        },
+        body: formData,
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { text?: string };
+        if (data?.text) return data.text;
+      }
+    } catch {
+      // Retry after delay
+    }
+    if (attempt < retries) {
+      await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+    }
   }
+  return null;
 }
 
 export async function transcribeAudioInCloud({

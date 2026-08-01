@@ -38,6 +38,9 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
   private noiseFloor: number = 0.003;
   private isSpeechActive: boolean = false;
   private enrolledEmbedding: Float32Array | null = null;
+  private lookAheadSize: number;
+  private lookAheadBuffer: Float32Array;
+  private lookAheadWriteIndex: number = 0;
 
   constructor() {
     super();
@@ -45,6 +48,8 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
     this.windowSize = Math.floor(this.processorSampleRate * 1.6);
     this.ringBuffer = new Float32Array(this.windowSize);
     this.postIntervalSamples = Math.floor(this.processorSampleRate * 0.4); // evaluate every 0.4s
+    this.lookAheadSize = Math.floor(this.processorSampleRate * 0.12); // 120ms look-ahead buffer
+    this.lookAheadBuffer = new Float32Array(this.lookAheadSize);
 
     this.port.onmessage = (event: MessageEvent) => {
       const { type, payload } = event.data;
@@ -239,21 +244,36 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
 
     // 4. Determine target gain (1.0 for enrolled speaker, 0.0 for non-enrolled background voices)
     const isRecentlyMatched = (currentTime - this.lastMatchTime) < 1.2;
+    const isMatchedNow = isRecentlyMatched && this.matchState;
 
-    if (!this.filterActive || !this.hasVoiceProfile) {
-      this.targetGain = 1.0;
-    } else if (isRecentlyMatched && this.matchState) {
-      this.targetGain = 1.0;
-    } else {
-      this.targetGain = this.suppressedGain;
-    }
-
-    // 5. Fast attack (0.35) and smooth release (0.08) gain transitions
-    const attackRelease = this.targetGain > this.currentGain ? 0.35 : 0.08;
+    // 5. Zero-latency look-ahead pre-buffer & instant gain activation
     for (let i = 0; i < inputChannel.length; i++) {
-      this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
       const sample = inputChannel[i] || 0;
-      outputChannel[i] = sample * this.currentGain;
+
+      // Write into rolling look-ahead ring buffer
+      this.lookAheadBuffer[this.lookAheadWriteIndex] = sample;
+
+      // Compute delayed read position (~120ms look-ahead window)
+      const readIndex = (this.lookAheadWriteIndex - this.lookAheadSize + 1 + this.lookAheadBuffer.length) % this.lookAheadBuffer.length;
+      const delayedSample = this.lookAheadBuffer[readIndex] ?? sample;
+      this.lookAheadWriteIndex = (this.lookAheadWriteIndex + 1) % this.lookAheadSize;
+
+      if (!this.filterActive || !this.hasVoiceProfile) {
+        this.targetGain = 1.0;
+        this.currentGain = 1.0;
+      } else if (isMatchedNow) {
+        this.targetGain = 1.0;
+        // Instantaneous 100% gain activation on voice match (zero first-syllable clipping)
+        if (this.currentGain < 0.5) {
+          this.currentGain = 1.0;
+        }
+      } else {
+        this.targetGain = this.suppressedGain;
+      }
+
+      const attackRelease = this.targetGain > this.currentGain ? 0.45 : 0.08;
+      this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
+      outputChannel[i] = delayedSample * this.currentGain;
     }
 
     return true;
