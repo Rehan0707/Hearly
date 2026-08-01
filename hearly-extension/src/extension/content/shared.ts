@@ -583,6 +583,14 @@ export function registerMessageListener(platform: string) {
           }
         }
 
+        const ensureResumed = () => {
+          if (audioContext && audioContext.state === 'suspended') {
+            void audioContext.resume();
+          }
+        };
+        window.addEventListener('click', ensureResumed);
+        window.addEventListener('keydown', ensureResumed);
+
         sourceNode = audioContext.createMediaStreamSource(stream);
         sourceNode.connect(audioContext.destination);
         logger.log(`[Hearly] Audio capture started on ${platform} page (tabCapture)`);
@@ -642,8 +650,10 @@ export function initPlatform(
 ) {
   installMicBridge(platform);
   injectHearlyIndicator();
+  injectHearlyBanner();
 
   const sendMeetingDetected = () => {
+    injectHearlyBanner();
     chrome.runtime.sendMessage({
       type: 'MEETING_DETECTED',
       payload: { platform }

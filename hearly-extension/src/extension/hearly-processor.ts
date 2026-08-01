@@ -28,7 +28,7 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
   private samplesSinceLastPost: number = 0;
   private postIntervalSamples: number;
   private lastMatchTime: number = Number.NEGATIVE_INFINITY;
-  private suppressedGain: number = 0.02; // Active speech suppression for non-enrolled speakers
+  private suppressedGain: number = 0.0; // Completely silence non-enrolled background speakers & noise
   private targetGain: number = 1.0;
   private currentGain: number = 1.0;
   private filterActive: boolean = false;
@@ -199,16 +199,15 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
       }
 
       if (this.filterActive && this.hasVoiceProfile && this.enrolledEmbedding && this.isSpeechActive) {
-        const candidateEmbedding = this.extractWorkletFeatures(out);
-        const sim = this.computeCosineSimilarity(this.enrolledEmbedding, candidateEmbedding);
-        const inWorkletThreshold = Math.max(0.88, this.similarityThreshold);
+        if (this.enrolledEmbedding.length === 192) {
+          const candidateEmbedding = this.extractWorkletFeatures(out);
+          const sim = this.computeCosineSimilarity(this.enrolledEmbedding, candidateEmbedding);
+          const inWorkletThreshold = Math.max(0.62, Math.min(0.80, this.similarityThreshold));
 
-        if (sim >= inWorkletThreshold) {
-          this.matchState = true;
-          this.lastMatchTime = currentTime;
-        } else {
-          this.matchState = false;
-          this.lastMatchTime = Number.NEGATIVE_INFINITY;
+          if (sim >= inWorkletThreshold) {
+            this.matchState = true;
+            this.lastMatchTime = currentTime;
+          }
         }
       }
 
@@ -238,8 +237,8 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
       });
     }
 
-    // 4. Determine target gain (1.0 for enrolled speaker, 0.02 for non-enrolled background voices)
-    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 0.6;
+    // 4. Determine target gain (1.0 for enrolled speaker, 0.0 for non-enrolled background voices)
+    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 1.2;
 
     if (!this.filterActive || !this.hasVoiceProfile) {
       this.targetGain = 1.0;
@@ -249,8 +248,8 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
       this.targetGain = this.suppressedGain;
     }
 
-    // 5. Smooth gain transitions to prevent audio pops (<25ms window)
-    const attackRelease = this.targetGain > this.currentGain ? 0.15 : 0.05;
+    // 5. Fast attack (0.35) and smooth release (0.08) gain transitions
+    const attackRelease = this.targetGain > this.currentGain ? 0.35 : 0.08;
     for (let i = 0; i < inputChannel.length; i++) {
       this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
       const sample = inputChannel[i] || 0;
