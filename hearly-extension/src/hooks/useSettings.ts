@@ -10,7 +10,7 @@ const defaultSettings: AppSettings = {
   hearlyActive: false,
   transcriptEnabled: true,
   similarityThreshold: SPEAKER_SIMILARITY_THRESHOLD,
-  groqApiKey: '',
+  groqApiKey: (import.meta.env.VITE_GROQ_API_KEY as string | undefined) ?? '',
   geminiApiKey: '',
 };
 

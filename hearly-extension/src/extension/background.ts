@@ -303,7 +303,7 @@ function handleMessage(
       const storageData = await new Promise<{ hearly_app_settings?: { groqApiKey?: string } }>((res) => {
         chrome.storage.local.get(['hearly_app_settings'], (result) => res(result as any));
       });
-      const groqKey = storageData?.hearly_app_settings?.groqApiKey;
+      const groqKey = storageData?.hearly_app_settings?.groqApiKey || (import.meta.env.VITE_GROQ_API_KEY as string | undefined);
 
       if (groqKey) {
         try {
