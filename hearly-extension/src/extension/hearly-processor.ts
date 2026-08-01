@@ -38,6 +38,7 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
   private noiseFloor: number = 0.003;
   private isSpeechActive: boolean = false;
   private enrolledEmbedding: Float32Array | null = null;
+  private enrolledChunks: Float32Array[] = [];
   private lookAheadSize: number;
   private lookAheadBuffer: Float32Array;
   private lookAheadWriteIndex: number = 0;
@@ -47,7 +48,7 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
     this.processorSampleRate = typeof sampleRate === 'number' && sampleRate > 0 ? sampleRate : 48000;
     this.windowSize = Math.floor(this.processorSampleRate * 1.6);
     this.ringBuffer = new Float32Array(this.windowSize);
-    this.postIntervalSamples = Math.floor(this.processorSampleRate * 0.4); // evaluate every 0.4s
+    this.postIntervalSamples = Math.floor(this.processorSampleRate * 0.35); // evaluate every 0.35s
     this.lookAheadSize = Math.floor(this.processorSampleRate * 0.12); // 120ms look-ahead buffer
     this.lookAheadBuffer = new Float32Array(this.lookAheadSize);
 
@@ -58,6 +59,9 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         this.similarityThreshold = payload.threshold ?? SPEAKER_SIMILARITY_THRESHOLD;
         if (Array.isArray(payload.embedding) && payload.embedding.length > 0) {
           this.enrolledEmbedding = new Float32Array(payload.embedding);
+        }
+        if (Array.isArray(payload.chunks) && payload.chunks.length > 0) {
+          this.enrolledChunks = payload.chunks.map((c: number[]) => new Float32Array(c));
         }
       } else if (type === 'SET_FILTER_ACTIVE') {
         this.filterActive = payload.active;
@@ -203,16 +207,24 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         idx = (idx + 1) % this.windowSize;
       }
 
-      if (this.filterActive && this.hasVoiceProfile && this.enrolledEmbedding && this.isSpeechActive) {
-        if (this.enrolledEmbedding.length === 192) {
-          const candidateEmbedding = this.extractWorkletFeatures(out);
-          const sim = this.computeCosineSimilarity(this.enrolledEmbedding, candidateEmbedding);
-          const inWorkletThreshold = Math.max(0.62, Math.min(0.80, this.similarityThreshold));
-
-          if (sim >= inWorkletThreshold) {
-            this.matchState = true;
-            this.lastMatchTime = currentTime;
+      if (this.filterActive && this.hasVoiceProfile && this.isSpeechActive) {
+        const candidateEmbedding = this.extractWorkletFeatures(out);
+        let maxSim = 0;
+        if (this.enrolledEmbedding && this.enrolledEmbedding.length === 192) {
+          maxSim = Math.max(maxSim, this.computeCosineSimilarity(this.enrolledEmbedding, candidateEmbedding));
+        }
+        for (const chunk of this.enrolledChunks) {
+          if (chunk.length === 192) {
+            maxSim = Math.max(maxSim, this.computeCosineSimilarity(chunk, candidateEmbedding));
           }
+        }
+
+        const inWorkletThreshold = Math.max(0.62, Math.min(0.80, this.similarityThreshold));
+        if (maxSim >= inWorkletThreshold) {
+          this.matchState = true;
+          this.lastMatchTime = currentTime;
+        } else {
+          this.matchState = false;
         }
       }
 
@@ -243,10 +255,10 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
     }
 
     // 4. Determine target gain (1.0 for enrolled speaker, 0.0 for non-enrolled background voices)
-    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 1.2;
+    const isRecentlyMatched = (currentTime - this.lastMatchTime) < 0.20;
     const isMatchedNow = isRecentlyMatched && this.matchState;
 
-    // 5. Zero-latency look-ahead pre-buffer & instant gain activation
+    // 5. Zero-latency look-ahead pre-buffer & instant gain activation/deactivation
     for (let i = 0; i < inputChannel.length; i++) {
       const sample = inputChannel[i] || 0;
 
@@ -271,7 +283,8 @@ class HearyVoiceProcessor extends AudioWorkletProcessor {
         this.targetGain = this.suppressedGain;
       }
 
-      const attackRelease = this.targetGain > this.currentGain ? 0.45 : 0.08;
+      // Fast attack (0.45) on voice match, instant hard mute drop (0.95) on background voice
+      const attackRelease = this.targetGain > this.currentGain ? 0.45 : 0.95;
       this.currentGain += (this.targetGain - this.currentGain) * attackRelease;
       outputChannel[i] = delayedSample * this.currentGain;
     }
