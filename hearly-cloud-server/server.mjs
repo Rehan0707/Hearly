@@ -20,7 +20,9 @@ function json(res, status, body, req) {
     !origin ||
     origin.startsWith('chrome-extension://') ||
     origin.startsWith('http://localhost:') ||
-    origin.startsWith('http://127.0.0.1:');
+    origin.startsWith('http://127.0.0.1:') ||
+    origin.includes('hearly.live') ||
+    origin.includes('github.io');
 
   const allowOrigin = isAllowed ? (origin || '*') : 'null';
 
