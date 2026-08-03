@@ -146,27 +146,6 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
 
           {!isSubmitted ? (
             <div>
-              {/* Badge */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--brand-crimson-dim)',
-                  color: 'var(--brand-crimson)',
-                  padding: '6px 12px',
-                  borderRadius: '100px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  marginBottom: '20px',
-                  border: '1px solid var(--brand-crimson-glow)',
-                }}
-              >
-                <Sparkles size={13} />
-                Early Access Waitlist
-              </div>
 
               <h3
                 style={{
