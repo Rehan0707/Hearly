@@ -39,34 +39,32 @@ export async function sendWaitlistConfirmationEmail(userEmail, useCase = 'Studen
     </div>
   `;
 
-  // 1. If Resend API Key is set in .env
-  if (RESEND_API_KEY) {
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: 'Hearly <onboarding@resend.dev>',
-          reply_to: OFFICIAL_EMAIL,
-          to: [userEmail],
-          subject: 'Welcome to the Hearly Waitlist! 🚀',
-          html: emailHtml,
-        }),
-      });
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'Hearly <welcome@hearly.live>',
+        reply_to: OFFICIAL_EMAIL,
+        to: [userEmail],
+        subject: 'Welcome to the Hearly Waitlist! 🚀',
+        html: emailHtml,
+      }),
+    });
 
-      if (response.ok) {
-        console.log('[EmailService] Confirmation email sent successfully to:', userEmail);
-        return { success: true };
-      }
-    } catch (err) {
-      console.warn('[EmailService] Resend email send exception:', err);
+    const resData = await response.json();
+    if (response.ok) {
+      console.log('[EmailService] Confirmation email sent successfully to:', userEmail, resData);
+      return { success: true, data: resData };
+    } else {
+      console.warn('[EmailService] Resend API response error:', resData);
+      return { success: false, error: resData };
     }
+  } catch (err) {
+    console.warn('[EmailService] Resend email send exception:', err);
+    return { success: false, error: String(err) };
   }
-
-  // 2. Log confirmation trigger for preview
-  console.log('[EmailService] Confirmation email prepared from', OFFICIAL_EMAIL, 'for subscriber:', userEmail);
-  return { success: true };
 }

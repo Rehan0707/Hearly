@@ -34,8 +34,10 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
       return;
     }
 
-    // Trigger automated confirmation email for new subscribers
-    sendWaitlistConfirmationEmail(email, role).catch(() => {});
+    // Trigger automated confirmation email for new subscribers directly
+    await sendWaitlistConfirmationEmail(email, role).catch((err) => {
+      console.warn('[WaitlistModal] Email delivery notice:', err);
+    });
 
     setIsSubmitted(true);
     toast.success('Successfully added to the Hearly waitlist!', {
@@ -296,8 +298,16 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
                       boxSizing: 'border-box',
                     }}
                   >
-                    <option value="Student">Student</option>
+                    <option value="Student">Student / Academic</option>
+                    <option value="Software Engineer">Software Engineer / Developer</option>
+                    <option value="Product Manager">Product Manager / Designer</option>
                     <option value="Working Professional">Working Professional</option>
+                    <option value="Researcher / Journalist">Researcher / Journalist</option>
+                    <option value="Executive / Founder">Executive / Founder / Leader</option>
+                    <option value="Sales / Marketing">Sales / Marketing / Support</option>
+                    <option value="Consultant / Freelancer">Consultant / Freelancer</option>
+                    <option value="Educator / Teacher">Educator / Teacher</option>
+                    <option value="Healthcare / Legal">Healthcare / Legal Professional</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

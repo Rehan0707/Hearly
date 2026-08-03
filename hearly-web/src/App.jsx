@@ -16,7 +16,6 @@ import { Toaster } from 'sonner';
 import HearyFooter from './components/ui/HearlyFooter';
 import SectionHeader from './components/SectionHeader';
 import HearyPopupMockup from './components/HearyPopupMockup';
-import CustomCursor from './components/ui/CustomCursor';
 
 /* ─── Main App ─── */
 function App() {
@@ -82,7 +81,6 @@ function App() {
 
   return (
     <div className="app">
-      <CustomCursor />
       <WaitlistModal
         isOpen={isWaitlistOpen}
         onClose={() => setIsWaitlistOpen(false)}

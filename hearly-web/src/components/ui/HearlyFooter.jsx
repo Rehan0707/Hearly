@@ -21,7 +21,7 @@ function HearyFooter({ onOpenWaitlist }) {
       <div className="flex flex-col md:flex-row justify-between w-full max-w-[1400px] mx-auto mb-12 md:mb-16 gap-16">
         {/* Left */}
         <div className="text-3xl md:text-[2.75rem] leading-tight tracking-tight font-normal text-[var(--brand-crimson)]">
-          Experience liftoff
+          Understand every conversation
         </div>
         
         {/* Right Links */}

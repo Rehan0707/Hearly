@@ -1,10 +1,45 @@
-
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import Magnetic from './ui/Magnetic';
 
 export default function Hero({ onOpenWaitlist }) {
+  const fullText = "Understand every conversation. Even the chaotic ones.";
+  const [displayedLength, setDisplayedLength] = useState(0);
+
+  useEffect(() => {
+    if (displayedLength < fullText.length) {
+      const nextChar = fullText[displayedLength];
+      let delay = 85;
+      if (nextChar === '.') {
+        delay = 600;
+      } else if (nextChar === ' ') {
+        delay = 80;
+      }
+      const timer = setTimeout(() => {
+        setDisplayedLength((prev) => prev + 1);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [displayedLength, fullText]);
+
+  const currentText = fullText.slice(0, displayedLength);
+
+  const renderTypedContent = () => {
+    const parts = currentText.split(/(chaotic)/i);
+    return parts.map((part, index) => {
+      if (part.toLowerCase() === 'chaotic') {
+        return (
+          <span key={index} className="gradient-text-crimson">
+            {part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   return (
     <section
       style={{
@@ -53,7 +88,7 @@ export default function Hero({ onOpenWaitlist }) {
         </span>
       </motion.div>
 
-      {/* Main Headline */}
+      {/* Main Headline with Typewriter Effect */}
       <h1
         style={{
           fontFamily: 'var(--font-display)',
@@ -61,69 +96,28 @@ export default function Hero({ onOpenWaitlist }) {
           fontSize: 'clamp(2.8rem, 5.5vw, 4.5rem)',
           lineHeight: 1.15,
           color: 'var(--text-primary)',
-          maxWidth: '800px',
+          maxWidth: '850px',
           letterSpacing: '-0.01em',
           marginBottom: '48px',
+          minHeight: '2.3em',
         }}
       >
-        {"Experience liftoff with the next-gen voice intelligence".split(" ").map((word, i) => (
-          <motion.span
-            key={i}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.1 + i * 0.08,
-              type: "spring",
-              stiffness: 150,
-              damping: 12
-            }}
-            style={{ display: 'inline-block', marginRight: '0.25em' }}
-            className={word === "next-gen" ? "gradient-text-crimson" : ""}
-          >
-            {word}
-          </motion.span>
-        ))}
+        {renderTypedContent()}
+        <motion.span
+          animate={{ opacity: [1, 0] }}
+          transition={{ duration: 0.7, repeat: Infinity, repeatType: 'reverse' }}
+          style={{
+            display: 'inline-block',
+            width: '4px',
+            height: '0.85em',
+            backgroundColor: 'var(--brand-crimson)',
+            marginLeft: '4px',
+            verticalAlign: 'baseline',
+            borderRadius: '2px',
+            boxShadow: '0 0 10px var(--brand-crimson)',
+          }}
+        />
       </h1>
-
-      {/* Version Tag */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        style={{
-          background: 'var(--brand-crimson-dim)',
-          color: 'var(--brand-crimson)',
-          padding: '6px 14px 6px 10px',
-          borderRadius: 'var(--radius-pill)',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          marginBottom: '20px',
-          border: '1px solid var(--brand-crimson-glow)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '8px', height: '8px' }}>
-          <span style={{
-            position: 'absolute',
-            width: '100%', height: '100%',
-            borderRadius: '50%',
-            background: 'var(--brand-crimson)',
-            animation: 'pulse-ring 1.8s ease-out infinite',
-          }} />
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--brand-crimson)', flexShrink: 0 }} />
-        </span>
-        Coming Soon — Waitlist Open
-        <style>{`
-          @keyframes pulse-ring {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(2.4); opacity: 0; }
-          }
-        `}</style>
-      </motion.div>
 
       {/* Subtitle */}
       <motion.p
