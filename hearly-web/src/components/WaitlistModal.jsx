@@ -158,7 +158,7 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
                   letterSpacing: '-0.02em',
                 }}
               >
-                Get VIP Access to <span style={{ color: 'var(--brand-crimson)' }}>Hearly</span>
+                Get Early Access to <span style={{ color: 'var(--brand-crimson)' }}>Hearly</span>
               </h3>
 
               <p
