@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, CheckCircle2, ArrowRight, Mail, Lock } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { submitWaitlistEntry } from '../services/supabaseWaitlist';
 import { sendWaitlistConfirmationEmail } from '../services/emailService';
@@ -35,7 +35,7 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
     }
 
     // Trigger automated confirmation email for new subscribers directly
-    await sendWaitlistConfirmationEmail(email, role).catch((err) => {
+    await sendWaitlistConfirmationEmail(email, role, defaultPlan || 'Basic').catch((err) => {
       console.warn('[WaitlistModal] Email delivery notice:', err);
     });
 
