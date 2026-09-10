@@ -40,14 +40,13 @@ struct ControlView: View {
             background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                topNavigation
-                branding
+                heroNavigation
 
                 ScrollView {
                     Group {
                         switch selectedTab {
                         case .home:
-                            homeContent
+                            heroHome
                         case .history:
                             historyContent
                         case .settings:
@@ -86,6 +85,159 @@ struct ControlView: View {
             Button("Remove", role: .destructive) { model.removeVoiceProfile() }
         } message: {
             Text("This will delete your enrolled voice profile from Hearly.")
+        }
+    }
+
+    private var heroNavigation: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 9) {
+                AppLogoMark(accent: accent, size: 30)
+
+                Text("Hearly")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+
+            Spacer(minLength: 12)
+
+            HStack(spacing: 13) {
+                ForEach(HearlyTab.allCases) { tab in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { selectedTab = tab }
+                    } label: {
+                        HStack(spacing: 5) {
+                            if tab == .home && model.filterActive {
+                                Circle()
+                                    .fill(accent)
+                                    .frame(width: 5, height: 5)
+                            }
+
+                            Text(tab.title)
+                                .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .medium))
+                        }
+                        .foregroundStyle(selectedTab == tab ? .white : Color.white.opacity(0.58))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button {
+                    selectedTab = .settings
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(selectedTab == .settings ? accent : Color.white.opacity(0.68))
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.white.opacity(0.06))
+                .frame(height: 1)
+        }
+    }
+
+    private var heroHome: some View {
+        VStack(spacing: 0) {
+            heroWelcome
+            heroScene
+            homeContent
+
+            Text("Private by design · Audio stays on this Mac in the MVP.")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.38))
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+        }
+    }
+
+    private var heroWelcome: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("\(dayGreeting), \(displayName).")
+                .font(.system(size: 25, weight: .semibold, design: .rounded))
+                .tracking(-0.7)
+                .foregroundStyle(.white)
+
+            Text(model.isVoiceEnrolled ? "YOUR FOCUSED AUDIO SPACE IS READY" : "SET UP YOUR FOCUSED AUDIO SPACE")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .tracking(1.5)
+                .foregroundStyle(Color.white.opacity(0.42))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 20)
+        .padding(.bottom, 18)
+    }
+
+    private var heroScene: some View {
+        VStack(spacing: 15) {
+            HeroProfileCard(name: displayName, accent: accent)
+                .frame(maxWidth: 290)
+
+            HeroOrb(accent: accent, isActive: model.filterActive)
+                .frame(height: 126)
+
+            VStack(spacing: 6) {
+                Text(model.isVoiceEnrolled ? "Hearly is ready to keep you clear." : "A calmer way to stay in the conversation.")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .tracking(-0.35)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                Text(model.isVoiceEnrolled
+                     ? "Start processing when you are ready. Your voice stays at the center of every call."
+                     : "Enroll your voice once, then let Hearly focus the audio around you.")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.white.opacity(0.58))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 290)
+            }
+
+            HStack(spacing: 9) {
+                Button {
+                    if model.isVoiceEnrolled {
+                        model.toggleAudio()
+                    } else {
+                        enrollmentName = ""
+                        enrollmentStep = 0
+                        enrollmentOpen = true
+                    }
+                } label: {
+                    Label(
+                        model.isVoiceEnrolled
+                            ? (model.filterActive ? "Pause Hearly" : "Start Hearly")
+                            : "Enroll Your Voice",
+                        systemImage: model.isVoiceEnrolled
+                            ? (model.filterActive ? "pause.fill" : "play.fill")
+                            : "mic.fill"
+                    )
+                }
+                .buttonStyle(HeroPrimaryButtonStyle(accent: accent))
+
+                Button("Explore") {
+                    roadmapOpen = true
+                }
+                .buttonStyle(HeroSecondaryButtonStyle())
+            }
+            .padding(.top, 4)
+        }
+        .padding(.bottom, 24)
+    }
+
+    private var displayName: String {
+        model.userName.isEmpty ? "Rehan" : model.userName
+    }
+
+    private var dayGreeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good morning"
+        case 12..<18: return "Good afternoon"
+        default: return "Good evening"
         }
     }
 
@@ -494,6 +646,156 @@ private struct ProductCard<Content: View>: View {
     }
 }
 
+private struct HeroProfileCard: View {
+    let name: String
+    let accent: Color
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.08), Color.white.opacity(0.025)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(
+                            LinearGradient(
+                                colors: [accent.opacity(0.42), Color.white.opacity(0.12)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+
+            VStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(accent)
+                        .frame(width: 5, height: 5)
+                    Text("A FOCUSED AUDIO PROFILE")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .tracking(1.2)
+                        .foregroundStyle(Color.white.opacity(0.48))
+                }
+
+                Text("For \(name)")
+                    .font(.system(size: 18, weight: .semibold, design: .serif))
+                    .italic()
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(height: 92)
+        .rotationEffect(.degrees(-1.2))
+        .shadow(color: accent.opacity(0.09), radius: 24, y: 10)
+    }
+}
+
+private struct HeroOrb: View {
+    let accent: Color
+    let isActive: Bool
+
+    @State private var rotation = 0.0
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [accent.opacity(isActive ? 0.28 : 0.16), .clear],
+                        center: .center,
+                        startRadius: 4,
+                        endRadius: 76
+                    )
+                )
+                .frame(width: 170, height: 120)
+                .blur(radius: 12)
+
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.clear, accent.opacity(0.55), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 128, height: 13)
+                .blur(radius: 8)
+                .rotationEffect(.degrees(-8))
+
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        colors: [Color.white.opacity(0.05), accent.opacity(0.82), Color.white.opacity(0.04)],
+                        center: .center,
+                        angle: .degrees(rotation)
+                    ),
+                    lineWidth: 1.2
+                )
+                .frame(width: 112, height: 112)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.94), accent.opacity(0.25), Color.black.opacity(0.96)],
+                        center: .topLeading,
+                        startRadius: 2,
+                        endRadius: 54
+                    )
+                )
+                .frame(width: 68, height: 68)
+                .overlay(
+                    Image(nsImage: NSApplication.shared.applicationIconImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .padding(13)
+                        .clipShape(Circle())
+                )
+                .shadow(color: accent.opacity(isActive ? 0.65 : 0.32), radius: 20)
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 18).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        }
+    }
+}
+
+private struct HeroPrimaryButtonStyle: ButtonStyle {
+    let accent: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color.black.opacity(0.86))
+            .padding(.horizontal, 17)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(configuration.isPressed ? 0.82 : 0.96))
+            )
+            .overlay(Capsule().stroke(accent.opacity(0.55), lineWidth: 1))
+            .shadow(color: accent.opacity(0.2), radius: 16)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+    }
+}
+
+private struct HeroSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color.white.opacity(configuration.isPressed ? 0.7 : 0.82))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Capsule().fill(Color.white.opacity(configuration.isPressed ? 0.08 : 0.045)))
+            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+    }
+}
+
 private struct ToggleRow: View {
     let title: String
     let subtitle: String
@@ -557,6 +859,12 @@ private struct StatusBadge: View {
 
 private struct AppLogoMark: View {
     let accent: Color
+    let size: CGFloat
+
+    init(accent: Color, size: CGFloat = 38) {
+        self.accent = accent
+        self.size = size
+    }
 
     var body: some View {
         ZStack {
@@ -570,10 +878,10 @@ private struct AppLogoMark: View {
             Image(nsImage: NSApplication.shared.applicationIconImage)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .padding(5)
+                .padding(size * 0.13)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
         }
-        .frame(width: 38, height: 38)
+        .frame(width: size, height: size)
         .shadow(color: accent.opacity(0.12), radius: 12)
     }
 }
