@@ -146,6 +146,34 @@ function buildPhrases() {
   ];
 }
 
+const MICROPHONE_SETTINGS_URL = 'chrome://settings/content/microphone';
+
+function getPermissionRequestUrl(displayName: string) {
+  return `index.html?requestMic=true&name=${encodeURIComponent(displayName)}`;
+}
+
+function openMicrophonePermissionPage(displayName: string) {
+  if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+    chrome.tabs.create({ url: MICROPHONE_SETTINGS_URL, active: true }, () => {
+      const error = chrome.runtime.lastError;
+      if (!error) return;
+
+      logger.warn('[Hearly] Could not open Chrome microphone settings:', error.message);
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(getPermissionRequestUrl(displayName)),
+        active: true,
+      });
+    });
+    return;
+  }
+
+  window.open(
+    `${window.location.origin}/${getPermissionRequestUrl(displayName)}`,
+    '_blank',
+    'noopener,noreferrer',
+  );
+}
+
 function SiriWaveform({
   active,
   volume,
@@ -248,6 +276,7 @@ export function Phase2_Record({
   const [speechSupported, setSpeechSupported] = useState(true);
   const isSpeechPermanentlyUnsupported = useRef(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [permissionBlocked, setPermissionBlocked] = useState(false);
   const [isProcessingPhrase, setIsProcessingPhrase] = useState(false);
   const completeNotifiedRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -303,6 +332,7 @@ export function Phase2_Record({
     async function startCapture() {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
         setRecordingError('Microphone recording is not available in this browser.');
+        setPermissionBlocked(false);
         onToggleRecord();
         return;
       }
@@ -364,15 +394,23 @@ export function Phase2_Record({
           }
         };
         recorder.start();
-      } catch {
-        setRecordingError('Microphone permission is needed to train your voice.');
+      } catch (error) {
+        const errorName = error instanceof DOMException ? error.name : 'UnknownError';
+        const isPermissionError =
+          errorName === 'NotAllowedError' ||
+          errorName === 'PermissionDeniedError' ||
+          errorName === 'SecurityError';
+
+        logger.warn('[Hearly] Microphone capture failed:', errorName);
+        setPermissionBlocked(isPermissionError);
+        setRecordingError(
+          isPermissionError
+            ? 'Chrome is blocking microphone access for Hearly.'
+            : errorName === 'NotFoundError'
+              ? 'No microphone was found. Connect a microphone and try again.'
+              : 'Could not start microphone recording. Please try again.',
+        );
         onToggleRecord();
-        
-        if (typeof chrome !== 'undefined' && chrome.tabs) {
-          chrome.tabs.create({ url: chrome.runtime.getURL(`index.html?requestMic=true&name=${encodeURIComponent(displayName)}`) });
-        } else {
-          window.open(window.location.href + `?requestMic=true&name=${encodeURIComponent(displayName)}`, '_blank');
-        }
       }
     }
 
@@ -683,21 +721,20 @@ export function Phase2_Record({
             <p className="text-[11px] font-medium leading-relaxed text-hearly-danger">
               {recordingError}
             </p>
-            {recordingError.toLowerCase().includes('permission') && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof chrome !== 'undefined' && chrome.tabs) {
-                    chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
-                  } else {
-                    window.open(window.location.href, '_blank');
-                  }
-                }}
-                className="mt-2 text-[11px] font-semibold text-hearly-accent hover:underline"
-              >
-                Open in a new tab to grant permissions
-              </button>
-            )}
+            {permissionBlocked ? (
+              <div className="mt-3 rounded-2xl border border-hearly-accent/20 bg-hearly-accent/[0.06] p-3">
+                <p className="text-[11px] leading-relaxed text-hearly-secondary">
+                  Open Chrome&apos;s microphone settings, allow Hearly, then return here and tap the microphone again.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openMicrophonePermissionPage(displayName)}
+                  className="mt-3 flex min-h-[42px] w-full items-center justify-center rounded-full border border-hearly-accent/35 bg-hearly-accent/[0.1] px-4 text-[11px] font-semibold text-hearly-accent shadow-[0_0_20px_rgba(181,240,61,0.12)] transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-hearly-accent/55 hover:bg-hearly-accent/[0.16] hover:text-white active:scale-[0.99]"
+                >
+                  Open microphone settings
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
