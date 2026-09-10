@@ -191,6 +191,10 @@ ONNX voice-isolation adapter is being integrated. The public release also
 requires live HAL validation, Developer ID signing, notarization, and a clean
 Apple-silicon install test.
 
+The legacy Chrome extension is tracked separately and is formally deferred
+from the native release gate; see `docs/EXTENSION_RUNTIME.md` for its isolated
+profile verification matrix.
+
 ---
 
 ## 🔒 Security & Privacy

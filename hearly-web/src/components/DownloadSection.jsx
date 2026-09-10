@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Antigravity = lazy(() => import('./Antigravity.jsx'));
+const MACOS_DOWNLOAD_URL = (import.meta.env.VITE_MACOS_DOWNLOAD_URL || '').trim();
 
 export default function DownloadSection({ onOpenWaitlist }) {
   return (
@@ -88,10 +89,14 @@ export default function DownloadSection({ onOpenWaitlist }) {
           >
             {/* Primary CTA */}
             <a
-              href="#"
+              href={MACOS_DOWNLOAD_URL || '#'}
+              target={MACOS_DOWNLOAD_URL ? '_blank' : undefined}
+              rel={MACOS_DOWNLOAD_URL ? 'noreferrer' : undefined}
               onClick={(e) => {
-                e.preventDefault();
-                if (onOpenWaitlist) onOpenWaitlist();
+                if (!MACOS_DOWNLOAD_URL) {
+                  e.preventDefault();
+                  if (onOpenWaitlist) onOpenWaitlist();
+                }
               }}
               style={{
                 display: 'inline-flex',
@@ -122,7 +127,7 @@ export default function DownloadSection({ onOpenWaitlist }) {
               }}
             >
               <Sparkles size={16} />
-              Join Waitlist — Get Early Access
+              {MACOS_DOWNLOAD_URL ? 'Download for Apple silicon' : 'Join Waitlist — Get Early Access'}
             </a>
 
             {/* Secondary CTA */}
@@ -164,6 +169,19 @@ export default function DownloadSection({ onOpenWaitlist }) {
               View Documentation
             </a>
           </div>
+
+          <p
+            style={{
+              marginTop: '18px',
+              color: 'rgba(255, 255, 255, 0.58)',
+              fontSize: '0.82rem',
+              maxWidth: '560px',
+            }}
+          >
+            {MACOS_DOWNLOAD_URL
+              ? 'Signed Apple-silicon download. Install the app and the separate virtual microphone component.'
+              : 'The signed Apple-silicon download will appear here after release validation is complete.'}
+          </p>
         </div>
 
         {/* Subtle bottom gradient for text readability */}

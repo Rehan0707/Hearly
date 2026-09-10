@@ -71,10 +71,10 @@ else
   block 'Hearly Microphone is not visible; install the HAL driver for live testing'
 fi
 
-if [[ -n "${VITE_MACOS_DOWNLOAD_URL:-}" ]]; then
+if [[ "${VITE_MACOS_DOWNLOAD_URL:-}" =~ ^https://.+/Hearly-macOS-[0-9]+\.[0-9]+\.[0-9]+-arm64\.zip$ ]]; then
   pass 'Website macOS download URL is configured'
 else
-  block 'VITE_MACOS_DOWNLOAD_URL is not configured'
+  block 'VITE_MACOS_DOWNLOAD_URL must be an HTTPS versioned arm64 zip URL'
 fi
 
 if [[ -n "${HEARLY_NATIVE_MODEL:-}" && -f "$HEARLY_NATIVE_MODEL" ]]; then

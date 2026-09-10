@@ -50,6 +50,21 @@ Run `./Scripts/preflight-release.sh` before distribution to report missing Xcode
 
 Local packages are ad hoc signed for verification. For a distributable build, set `CODE_SIGN_IDENTITY` to a valid Developer ID Application identity. Set `NOTARY_PROFILE` to a stored `notarytool` keychain profile to submit, wait for, and staple notarization before the final zip is written. Set `STRICT_RELEASE=1` in CI to fail closed when signing is not configured.
 
+The release shell setup is intentionally explicit:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+security find-identity -v -p codesigning
+xcrun notarytool store-credentials HEARLY_NOTARY
+CODE_SIGN_IDENTITY='Developer ID Application: Your Name (TEAMID)' \
+NOTARY_PROFILE=HEARLY_NOTARY \
+VITE_MACOS_DOWNLOAD_URL='https://downloads.example.com/Hearly-macOS-0.1.0-arm64.zip' \
+STRICT_RELEASE=1 ./Scripts/build-release.sh
+```
+
+Do not replace the example identity, profile, or URL with placeholders in a
+public build. The preflight requires an HTTPS, versioned Apple-silicon zip URL.
+
 Install the driver only on a test machine:
 
 ```bash

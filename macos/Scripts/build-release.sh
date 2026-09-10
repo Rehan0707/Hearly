@@ -46,8 +46,9 @@ ditto "$APP_DIR" "$PACKAGE_DIR/Hearly.app"
 ditto "$DRIVER_DIR" "$PACKAGE_DIR/HearlyAudio.driver"
 cp "$ROOT_DIR/Scripts/install-driver.sh" "$PACKAGE_DIR/install-driver.sh"
 cp "$ROOT_DIR/Scripts/uninstall-driver.sh" "$PACKAGE_DIR/uninstall-driver.sh"
+cp "$ROOT_DIR/Scripts/verify-driver.sh" "$PACKAGE_DIR/verify-driver.sh"
 cp "$ROOT_DIR/INSTALL.md" "$PACKAGE_DIR/INSTALL.md"
-chmod +x "$PACKAGE_DIR/install-driver.sh" "$PACKAGE_DIR/uninstall-driver.sh"
+chmod +x "$PACKAGE_DIR/install-driver.sh" "$PACKAGE_DIR/uninstall-driver.sh" "$PACKAGE_DIR/verify-driver.sh"
 
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   if [[ -z "${CODE_SIGN_IDENTITY:-}" ]]; then
@@ -57,6 +58,7 @@ if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ZIP_PATH"
   xcrun notarytool submit "$ZIP_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
   xcrun stapler staple "$PACKAGE_DIR/Hearly.app"
+  xcrun stapler validate "$PACKAGE_DIR/Hearly.app"
   rm -f "$ZIP_PATH"
 fi
 
