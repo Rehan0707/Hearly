@@ -38,9 +38,9 @@ export default function Navbar({ onOpenWaitlist }) {
         borderBottom: `1px solid ${scrolled ? 'var(--border-subtle)' : 'transparent'}`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+      <div className="navbar-shell">
         {/* Left — Logo */}
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+        <a href="/" className="navbar-brand" style={{ textDecoration: 'none' }}>
           <img src={logo} alt="Hearly" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '7px' }} />
           <span style={{
             fontFamily: 'var(--font-body)',
@@ -54,7 +54,7 @@ export default function Navbar({ onOpenWaitlist }) {
         </a>
 
         {/* Center — Nav Links (Desktop) */}
-        <div className="nav-links" style={{ display: 'flex', gap: '32px' }}>
+        <div className="nav-links">
           {navLinks.map((link) => (
             <div 
               key={link.label}
@@ -121,16 +121,15 @@ export default function Navbar({ onOpenWaitlist }) {
       </div>
 
       {/* Right — CTA + Mobile Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="navbar-actions">
         <a
+          className="navbar-cta"
           href="#"
           onClick={(e) => {
             e.preventDefault();
             if (onOpenWaitlist) onOpenWaitlist();
           }}
           style={{
-            display: 'flex',
-            alignItems: 'center',
             gap: '8px',
             background: 'var(--brand-crimson)',
             color: '#050505',
@@ -151,14 +150,6 @@ export default function Navbar({ onOpenWaitlist }) {
         <button
           aria-label="Toggle mobile menu"
           onClick={() => setMobileOpen(!mobileOpen)}
-          style={{
-            display: 'none',
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            padding: '4px',
-          }}
           className="mobile-menu-btn"
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -173,6 +164,7 @@ export default function Navbar({ onOpenWaitlist }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
+            className="mobile-menu"
             style={{
               position: 'absolute',
               top: '100%',
@@ -181,10 +173,6 @@ export default function Navbar({ onOpenWaitlist }) {
               background: 'rgba(10, 10, 10, 0.98)',
               backdropFilter: 'blur(20px)',
               borderBottom: '1px solid var(--border-subtle)',
-              padding: '20px 24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
             }}
           >
             {navLinks.map((link) => (
@@ -208,17 +196,21 @@ export default function Navbar({ onOpenWaitlist }) {
                 {link.label}
               </a>
             ))}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setMobileOpen(false);
+                if (onOpenWaitlist) onOpenWaitlist();
+              }}
+              className="mobile-waitlist-link"
+            >
+              Join Waitlist
+              <Sparkles size={16} strokeWidth={2} />
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`
-        @media (max-width: 992px) {
-          .mobile-menu-btn {
-            display: block !important;
-          }
-        }
-      `}</style>
     </nav>
   );
 }
