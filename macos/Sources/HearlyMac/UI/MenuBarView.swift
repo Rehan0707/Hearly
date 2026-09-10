@@ -3,7 +3,6 @@ import SwiftUI
 
 struct MenuBarView: View {
     @ObservedObject var model: AppModel
-    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         Text(model.statusTitle)
@@ -13,7 +12,7 @@ struct MenuBarView: View {
         }
 
         Button("Open controls") {
-            openWindow(id: "controls")
+            NotificationCenter.default.post(name: .hearlyOpenControls, object: nil)
         }
 
         Divider()
