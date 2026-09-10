@@ -132,7 +132,7 @@ export default function Hero({ onOpenWaitlist }) {
           marginBottom: '36px',
         }}
       >
-        Real-time speaker identification, live transcription, and AI meeting summaries — right inside your browser.
+        A privacy-first macOS microphone that keeps your voice clearer before it reaches Meet, Zoom, Teams, or any call app.
       </motion.p>
 
       {/* CTA Buttons */}

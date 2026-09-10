@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Sparkles, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Check, Lock } from 'lucide-react';
 import HolographicCard from './ui/holographic-card';
 
 const pricingTiers = [
@@ -70,7 +69,7 @@ export default function Pricing({ onOpenWaitlist }) {
             Flexible plans. <span style={{ color: 'var(--text-secondary)' }}>Prices revealed soon.</span>
           </h2>
           <p style={{ maxWidth: '620px', margin: '0 auto', fontSize: '1.05rem', marginBottom: '32px', lineHeight: 1.6 }}>
-            Our Chrome extension is launching soon! Official plan pricing will be announced at launch. Join the waitlist now to unlock exclusive early-bird discounts and launch perks.
+            Hearly is moving toward an Apple-silicon macOS release. Join the waitlist for launch updates while the virtual microphone, native model, and signed installer complete validation.
           </p>
 
           {/* Launch Notice Banner */}

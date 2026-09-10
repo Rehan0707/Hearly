@@ -26,22 +26,32 @@ export default function WaitlistModal({ isOpen, onClose, defaultPlan = null }) {
     });
     setIsSubmitting(false);
 
-    if (result && result.isDuplicate) {
-      toast.info("You've already joined the waitlist!", {
-        description: result.message || "We already have your email registered and will notify you when Hearly launches.",
+    if (!result?.success && !result?.isDuplicate) {
+      toast.error('We could not save your waitlist signup.', {
+        description: result?.error || 'Please try again in a moment.',
       });
-      setIsSubmitted(true);
       return;
     }
 
-    // Trigger automated confirmation email for new subscribers directly
-    await sendWaitlistConfirmationEmail(email, role, defaultPlan || 'Basic').catch((err) => {
-      console.warn('[WaitlistModal] Email delivery notice:', err);
-    });
+    const emailResult = await sendWaitlistConfirmationEmail(email, role, defaultPlan || 'Basic');
+    if (!emailResult?.success) {
+      console.warn('[WaitlistModal] Email delivery notice:', emailResult?.error);
+    }
 
     setIsSubmitted(true);
+    if (result.isDuplicate) {
+      toast.info("You've already joined the waitlist!", {
+        description: emailResult?.success
+          ? 'We sent another confirmation email to your inbox.'
+          : result.message || "We already have your email registered and will notify you when Hearly launches.",
+      });
+      return;
+    }
+
     toast.success('Successfully added to the Hearly waitlist!', {
-      description: "We've saved your details and will notify you when Hearly launches.",
+      description: emailResult?.success
+        ? "We've saved your details and sent a confirmation email."
+        : "We've saved your details, but the confirmation email could not be sent.",
     });
   };
 

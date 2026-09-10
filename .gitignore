@@ -13,6 +13,11 @@ out/
 hearly-extension/dist/
 hearly-web/dist/
 *.tsbuildinfo
+macos/.build/
+macos/.build-xcode/
+macos/.swiftpm/
+macos/build/
+release/macos/
 
 # Large Model Binaries (>100MB)
 *.onnx.data

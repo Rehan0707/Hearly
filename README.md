@@ -44,6 +44,7 @@ Hearly/
 ├── hearly-web/            # 🌐 High-performance marketing web app & landing page
 ├── hearly-cloud-server/   # ☁️ Node.js proxy server for Whisper & AI completions
 ├── hearly-model/          # 🧠 PyTorch speaker verification training & ONNX export suite
+├── macos/                 # 🖥️ Native macOS app, audio bridge & HAL driver
 ├── docs/                  # 📄 Architectural specs, launch checklists & privacy policies
 ├── PROJECT_FILE_ANALYSIS.md
 ├── UI_CONTEXT.md
@@ -171,6 +172,24 @@ pip install -r requirements.txt
 # Run model setup and export script
 python setup_dev_models.py
 ```
+
+### 5. 🖥️ Native macOS app (`macos`)
+
+The macOS-first track captures the selected microphone with `AVAudioEngine`,
+passes processed PCM through a shared-memory bridge, and exposes `Hearly
+Microphone` through a separate Core Audio HAL bundle.
+
+```bash
+npm run build:macos
+npm run build:macos:app
+npm run build:macos:driver
+npm run preflight:macos
+```
+
+The current native build uses a clearly labeled energy-gate fallback while the
+ONNX voice-isolation adapter is being integrated. The public release also
+requires live HAL validation, Developer ID signing, notarization, and a clean
+Apple-silicon install test.
 
 ---
 

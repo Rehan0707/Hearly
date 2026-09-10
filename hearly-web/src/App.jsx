@@ -1,14 +1,11 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import Lenis from 'lenis';
-import Antigravity from './components/Antigravity';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import VideoShowcase from './components/VideoShowcase';
 import DownloadSection from './components/DownloadSection';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
-import Checkout from './components/Checkout';
-import WaitlistModal from './components/WaitlistModal';
 
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { Mic, History } from 'lucide-react';
@@ -17,11 +14,15 @@ import HearyFooter from './components/ui/HearlyFooter';
 import SectionHeader from './components/SectionHeader';
 import HearyPopupMockup from './components/HearyPopupMockup';
 
+const Antigravity = lazy(() => import('./components/Antigravity.jsx'));
+const Checkout = lazy(() => import('./components/Checkout.jsx'));
+const WaitlistModal = lazy(() => import('./components/WaitlistModal.jsx'));
+
 /* ─── Main App ─── */
 function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentView, setCurrentView] = useState('landing');
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedPlan] = useState(null);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [waitlistPlan, setWaitlistPlan] = useState(null);
 
@@ -68,24 +69,30 @@ function App() {
 
   if (currentView === 'checkout') {
     return (
-      <Checkout 
-        plan={selectedPlan} 
-        onBack={() => setCurrentView('landing')} 
-        onSuccess={(res) => {
-          console.log('Payment success:', res);
-          setCurrentView('landing');
-        }} 
-      />
+      <Suspense fallback={null}>
+        <Checkout
+          plan={selectedPlan}
+          onBack={() => setCurrentView('landing')}
+          onSuccess={(res) => {
+            console.log('Payment success:', res);
+            setCurrentView('landing');
+          }}
+        />
+      </Suspense>
     );
   }
 
   return (
     <div className="app">
-      <WaitlistModal
-        isOpen={isWaitlistOpen}
-        onClose={() => setIsWaitlistOpen(false)}
-        defaultPlan={waitlistPlan}
-      />
+      {isWaitlistOpen && (
+        <Suspense fallback={null}>
+          <WaitlistModal
+            isOpen={isWaitlistOpen}
+            onClose={() => setIsWaitlistOpen(false)}
+            defaultPlan={waitlistPlan}
+          />
+        </Suspense>
+      )}
       <motion.div
         style={{
           position: 'fixed',
@@ -116,23 +123,25 @@ function App() {
           pointerEvents: isScrolled ? 'none' : 'auto',
         }}
       >
-        <Antigravity
-          count={350}
-          magnetRadius={8}
-          ringRadius={8}
-          waveSpeed={0.3}
-          waveAmplitude={0.8}
-          particleSize={0.9}
-          lerpSpeed={0.05}
-          color="#BAF72B"
-          autoAnimate={false}
-          particleVariance={0.8}
-          rotationSpeed={0.05}
-          depthFactor={0.8}
-          pulseSpeed={2}
-          particleShape="capsule"
-          fieldStrength={8}
-        />
+        <Suspense fallback={null}>
+          <Antigravity
+            count={350}
+            magnetRadius={8}
+            ringRadius={8}
+            waveSpeed={0.3}
+            waveAmplitude={0.8}
+            particleSize={0.9}
+            lerpSpeed={0.05}
+            color="#BAF72B"
+            autoAnimate={false}
+            particleVariance={0.8}
+            rotationSpeed={0.05}
+            depthFactor={0.8}
+            pulseSpeed={2}
+            particleShape="capsule"
+            fieldStrength={8}
+          />
+        </Suspense>
       </motion.div>
 
       {/* Ambient glow overlay */}

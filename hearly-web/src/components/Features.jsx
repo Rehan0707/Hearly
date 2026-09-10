@@ -6,33 +6,33 @@ import HolographicCard from './ui/holographic-card';
 const features = [
   {
     icon: Mic,
-    title: "Speaker Identification",
-    description: "Identify and attribute voices in real-time with advanced MFCC analysis and voiceprint matching.",
+    title: "Virtual Microphone",
+    description: "Select Hearly Microphone inside your meeting app and keep the audio path independent of browser-specific integrations.",
   },
   {
     icon: Waves,
-    title: "Real-time Transcription",
-    description: "Live speech-to-text with sub-200ms latency. Powered by Deepgram's neural speech models.",
+    title: "Local Audio Path",
+    description: "Capture from the microphone, process locally, and deliver audio through a dedicated macOS Core Audio device.",
   },
   {
     icon: Brain,
-    title: "AI Meeting Summaries",
-    description: "Automatic action items, decisions, and key takeaways generated from every conversation.",
+    title: "Menu Bar Controls",
+    description: "Start, stop, select an input device, inspect the transport, and keep Hearly out of the way while you work.",
   },
   {
     icon: Shield,
-    title: "End-to-End Encryption",
-    description: "256-bit AES encryption with local processing. Your voice data never leaves your device.",
+    title: "Local by Default",
+    description: "The macOS track is designed around local processing, opt-in telemetry, and no raw microphone audio leaving the Mac.",
   },
   {
     icon: Zap,
-    title: "Emotion Detection",
-    description: "Detect sentiment, confidence, and engagement levels across speakers in real-time.",
+    title: "Apple Silicon First",
+    description: "The first release targets Apple-silicon Macs so the audio engine and model runtime can be validated on one reliable platform.",
   },
   {
     icon: Globe,
-    title: "Cross-Platform",
-    description: "Available on macOS, Windows, and Linux. Seamless sync across all your devices.",
+    title: "Clear Release Path",
+    description: "Driver validation, native voice isolation, signing, notarization, and clean-machine setup are the gates before public download.",
   },
 ];
 

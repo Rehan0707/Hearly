@@ -1,7 +1,8 @@
-
-import Antigravity from './Antigravity';
+import { lazy, Suspense } from 'react';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+
+const Antigravity = lazy(() => import('./Antigravity.jsx'));
 
 export default function DownloadSection({ onOpenWaitlist }) {
   return (
@@ -33,23 +34,25 @@ export default function DownloadSection({ onOpenWaitlist }) {
             zIndex: 0,
           }}
         >
-          <Antigravity
-            count={300}
-            magnetRadius={8}
-            ringRadius={8}
-            waveSpeed={0.3}
-            waveAmplitude={0.8}
-            particleSize={0.9}
-            lerpSpeed={0.02}
-            color="#BAF72B"
-            autoAnimate={false}
-            particleVariance={0.8}
-            rotationSpeed={0.05}
-            depthFactor={0.8}
-            pulseSpeed={2}
-            particleShape="capsule"
-            fieldStrength={8}
-          />
+          <Suspense fallback={null}>
+            <Antigravity
+              count={300}
+              magnetRadius={8}
+              ringRadius={8}
+              waveSpeed={0.3}
+              waveAmplitude={0.8}
+              particleSize={0.9}
+              lerpSpeed={0.02}
+              color="#BAF72B"
+              autoAnimate={false}
+              particleVariance={0.8}
+              rotationSpeed={0.05}
+              depthFactor={0.8}
+              pulseSpeed={2}
+              particleShape="capsule"
+              fieldStrength={8}
+            />
+          </Suspense>
         </div>
 
         {/* Content — vertically centered on the left */}
@@ -72,7 +75,7 @@ export default function DownloadSection({ onOpenWaitlist }) {
               marginBottom: '40px',
             }}
           >
-            Be the First to Experience{' '}
+            Get ready for Hearly on macOS{' '}
             <span style={{ color: 'var(--brand-crimson)' }}>Hearly</span>
           </h2>
 
